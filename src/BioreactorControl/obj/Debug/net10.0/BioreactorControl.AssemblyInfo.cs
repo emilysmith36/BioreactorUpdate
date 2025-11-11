@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a405cdab5f12da8afc3c5920e3487cdfa34ca86f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b4f4d8bfa70277d3b2d5fcb96100cdfdb996a91")]
 [assembly: System.Reflection.AssemblyProductAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

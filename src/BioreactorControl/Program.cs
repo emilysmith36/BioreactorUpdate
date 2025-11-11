@@ -18,7 +18,10 @@ public class ExecutionManagement
     private ReactorSettings reactorSettings;
     private ProjectSettings projectSettings;
 
-    public ExecutionManagement( ProjectSettings projectData )
+    private bool motorListInitialized;
+    public List<MotorThread> motorList { get; set; }
+
+    public ExecutionManagement(ProjectSettings projectData)
     {
         projectSettings = projectData;
         reactorSettings = projectSettings.reactorSettings;
@@ -35,36 +38,21 @@ public class ExecutionManagement
         Console.WriteLine("Connecting To Reactor");
         Console.WriteLine($"Reactor ID: {reactorSettings.reactorConnectionID}");
         Console.WriteLine($"Number of Motors: {reactorSettings.numberOfMotors}");
-        reactorSettings.printMotorList();
+        motorListInitialized = false;
+        motorList = [];
         Console.WriteLine("Reactor Connection Sucessful");
     }
 
     public void executeProject()
     {
         Console.WriteLine($"Executing Project of ID: {projectSettings.projectID}");
-    }
-
-}
-
-public class ReactorSettings
-{
-    public int reactorConnectionID { get; set; }
-    public int numberOfMotors { get; set; }
-    private bool motorListInitialized;
-    public List<MotorThread> motorList { get; set; }
-
-    public ReactorSettings (int connectionID, int motorsCount)
-    {
-        reactorConnectionID = connectionID;
-        numberOfMotors = motorsCount;
-        motorListInitialized = false;
-        motorList = [];
         initializeMotorList();
+        printMotorList();
     }
 
     public void initializeMotorList()
     {
-        for (int i = 0; i < numberOfMotors; i++)
+        for (int i = 0; i < reactorSettings.numberOfMotors; i++)
         {
             motorList.Add(new MotorThread(i));
         }
@@ -75,7 +63,7 @@ public class ReactorSettings
     {
         if (motorListInitialized)
         {
-            for (int i = 0; i < numberOfMotors; i++)
+            for (int i = 0; i < reactorSettings.numberOfMotors; i++)
             {
                 motorList[i].printMotorData();
             }
@@ -84,6 +72,19 @@ public class ReactorSettings
         {
             Console.WriteLine("Error: Motor List not initialized and unable to be printed.");
         }
+    }
+
+}
+
+public class ReactorSettings
+{
+    public int reactorConnectionID { get; set; }
+    public int numberOfMotors { get; set; }
+
+    public ReactorSettings (int connectionID, int motorsCount)
+    {
+        reactorConnectionID = connectionID;
+        numberOfMotors = motorsCount;
     }
 
 }
