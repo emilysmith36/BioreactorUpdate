@@ -1,0 +1,15 @@
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\bin\Debug\net10.0\BioreactorControl.exe
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\bin\Debug\net10.0\BioreactorControl.deps.json
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\bin\Debug\net10.0\BioreactorControl.runtimeconfig.json
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\bin\Debug\net10.0\BioreactorControl.dll
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\bin\Debug\net10.0\BioreactorControl.pdb
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.AssemblyInfoInputs.cache
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.AssemblyInfo.cs
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.csproj.CoreCompileInputs.cache
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.sourcelink.json
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.dll
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\refint\BioreactorControl.dll
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.pdb
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\BioreactorControl.genruntimeconfig.cache
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorControl\obj\Debug\net10.0\ref\BioreactorControl.dll
