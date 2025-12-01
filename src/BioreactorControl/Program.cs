@@ -118,3 +118,12 @@ public class MotorThread
         Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected}");
     }
 }
+
+public class projectAction
+{
+    public string actionType { get; set; }
+    public int duration { get; set; }
+    public float strainPercentage { get; set; }
+    public float ratePerSecond { get; set; }
+    public float hz { get; set; }
+}
