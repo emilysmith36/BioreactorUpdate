@@ -3,6 +3,7 @@
 using System.Buffers;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks.Dataflow;
 
 Console.WriteLine("Hello, World!");
 Console.WriteLine("Starting Project");
@@ -20,11 +21,14 @@ public class ExecutionManagement
 
     private bool motorListInitialized;
     public List<MotorThread> motorList { get; set; }
+    public List<List<ProjectAction>> actionLists { get; set; }
 
     public ExecutionManagement(ProjectSettings projectData)
     {
         projectSettings = projectData;
         reactorSettings = projectSettings.reactorSettings;
+        motorList = [];
+        actionLists = [];
     }
 
     public void Initialize()
@@ -48,6 +52,7 @@ public class ExecutionManagement
         Console.WriteLine($"Executing Project of ID: {projectSettings.projectID}");
         initializeMotorList();
         printMotorList();
+        
     }
 
     public void initializeMotorList()
@@ -117,13 +122,28 @@ public class MotorThread
     {
         Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected}");
     }
+
+    public void executeMotorAction( ProjectAction action )
+    {
+        Console.WriteLine("Performing action " , action.actionType , " for ", action.duration , " seconds.");
+    }
+
 }
 
-public class projectAction
+public class ProjectAction
 {
     public string actionType { get; set; }
     public int duration { get; set; }
     public float strainPercentage { get; set; }
     public float ratePerSecond { get; set; }
     public float hz { get; set; }
+
+    public ProjectAction()
+    {
+        actionType = "Wait";
+        duration = 1;
+        strainPercentage = 0.5f;
+        ratePerSecond = 0.5f;
+        hz = 0.5f;
+    }
 }
