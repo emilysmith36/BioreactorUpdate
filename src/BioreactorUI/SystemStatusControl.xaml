@@ -1,0 +1,21 @@
+<UserControl x:Class="BioreactorUI.SystemStatusControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:BioreactorUI"
+             MinWidth="300" MinHeight="200">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <TextBlock Text="{Binding Greeting}" FontWeight="Bold" FontSize="16" Margin="0 0 0 10"/>
+            <TextBlock Text="{Binding ProjectStart}" />
+            <TextBlock Text="{Binding ExecutionManagerStart}" />
+            <TextBlock Text="{Binding ReactorConnection}" />
+            <TextBlock Text="{Binding ReactorId}" />
+            <TextBlock Text="{Binding MotorCount}" />
+            <TextBlock Text="{Binding ReactorConnectionSuccess}" />
+            <TextBlock Text="{Binding ExecutingProject}" />
+            <TextBlock Text="{Binding MotorStatus}" />
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

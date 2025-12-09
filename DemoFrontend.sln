@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36717.8 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoFrontend", "DemoFrontend\DemoFrontend.csproj", "{10A386F7-257E-4D19-9C82-31409CF3F371}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BioreactorUI", "src\BioreactorUI\BioreactorUI.csproj", "{E74D180E-9CAC-418D-9A24-590ECFAD3BE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BioreactorControl", "src\BioreactorControl\BioreactorControl\BioreactorControl.csproj", "{ECB5C6A3-8B3D-4751-8367-15E57DA7F3C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{10A386F7-257E-4D19-9C82-31409CF3F371}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10A386F7-257E-4D19-9C82-31409CF3F371}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10A386F7-257E-4D19-9C82-31409CF3F371}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E74D180E-9CAC-418D-9A24-590ECFAD3BE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E74D180E-9CAC-418D-9A24-590ECFAD3BE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E74D180E-9CAC-418D-9A24-590ECFAD3BE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E74D180E-9CAC-418D-9A24-590ECFAD3BE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECB5C6A3-8B3D-4751-8367-15E57DA7F3C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB5C6A3-8B3D-4751-8367-15E57DA7F3C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECB5C6A3-8B3D-4751-8367-15E57DA7F3C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECB5C6A3-8B3D-4751-8367-15E57DA7F3C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

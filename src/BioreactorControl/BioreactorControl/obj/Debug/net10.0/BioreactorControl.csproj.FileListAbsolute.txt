@@ -1,0 +1,12 @@
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\bin\Debug\net10.0\BioreactorControl.deps.json
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\bin\Debug\net10.0\BioreactorControl.dll
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\bin\Debug\net10.0\BioreactorControl.pdb
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.GeneratedMSBuildEditorConfig.editorconfig
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.AssemblyInfoInputs.cache
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.AssemblyInfo.cs
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.csproj.CoreCompileInputs.cache
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.sourcelink.json
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.dll
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\refint\BioreactorControl.dll
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\BioreactorControl.pdb
+D:\Bioreactor\BioreactorUpdate\src\BioreactorControl\BioreactorControl\obj\Debug\net10.0\ref\BioreactorControl.dll
