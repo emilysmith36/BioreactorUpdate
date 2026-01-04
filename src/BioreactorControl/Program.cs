@@ -4,6 +4,8 @@ using System.Buffers;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks.Dataflow;
+using System.Threading;
+using System.Runtime.Intrinsics.X86;
 
 Console.WriteLine("Hello, World!");
 Console.WriteLine("Starting Project");
@@ -20,7 +22,7 @@ public class ExecutionManagement
     private ProjectSettings projectSettings;
 
     private bool motorListInitialized;
-    public List<MotorThread> motorList { get; set; }
+    public List<MotorData> motorList { get; set; }
     public List<List<ProjectAction>> actionLists { get; set; }
 
     public ExecutionManagement(ProjectSettings projectData)
@@ -59,7 +61,7 @@ public class ExecutionManagement
     {
         for (int i = 0; i < reactorSettings.numberOfMotors; i++)
         {
-            motorList.Add ( new MotorThread(i) );
+            motorList.Add ( new MotorData(i) );
         }
         motorListInitialized = true;
     }
@@ -107,22 +109,51 @@ public class ProjectSettings
 
 }
 
-public class MotorThread
+public class MotorData
 {
-    private int motorID { get; set; }
+    public int motorID { get; set; }
     private bool connected { get; set; }
-    private float motorPosition { get; set; } // in mm from base pos
+    private float motorPosition { get; set; }
+    private int executionStage { get; set; }
 
-    public MotorThread(int id)
+    public MotorData(int id)
     {
         motorID = id;
         connected = true;
+        executionStage = 0;
         initMotorPositon();
     }
 
     public void initMotorPositon()
     {
         motorPosition = 0;
+    }
+
+    public void printMotorData()
+    {
+        Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected} Position: {motorPosition}");
+    }
+
+}
+
+public class MotorThread
+{
+    private int motorID { get; set; }
+    private bool connected { get; set; }
+    private float motorPosition { get; set; } // in mm from base pos
+    private MotorData parentMotorData {get ; set;}
+
+    public MotorThread( MotorData parent )
+    {
+        parentMotorData = parent;
+        motorID = parent.motorID;
+        connected = true;
+        queryMotorPositon();
+    }
+
+    public float queryMotorPositon()
+    {
+        return 0.0f; //WIP Placeholder
     }
 
     public void printMotorData()
@@ -146,9 +177,11 @@ public class ProjectAction
         actionType = "Test Action";
     }
 
-    public void PerformAction()
+    public virtual void PerformAction()
     {
         Console.WriteLine("Performing Test Action.");
+        // Empty because test action does nothing
+        // In the future, maybe pinging the motor might be good here though for testing
         Console.WriteLine("Test Action Complete.");
     }
 }
@@ -168,7 +201,7 @@ public class ManualAction : ProjectAction
         Console.WriteLine($"Action Type: {actionType} Position: {rate} Rate: {rate}");
     }
 
-    public void PerformAction()
+    public override void PerformAction()
     {
         Console.WriteLine($"Performing Action: {actionType} Position: {rate} Rate: {rate}");
         // Blah blah coomplete the task
