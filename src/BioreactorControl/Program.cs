@@ -111,7 +111,7 @@ public class MotorThread
 {
     private int motorID { get; set; }
     private bool connected { get; set; }
-    private float motorPosition { get; set; }
+    private float motorPosition { get; set; } // in mm from base pos
 
     public MotorThread(int id)
     {
@@ -141,7 +141,7 @@ public class ProjectAction
 {
     public string actionType { get; set; }
     public int duration { get; set; }
-    public float strainPercentage { get; set; }
+    public float inputStrainPercentage { get; set; }
     public float ratePerSecond { get; set; }
     public float hz { get; set; }
 
@@ -149,7 +149,7 @@ public class ProjectAction
     {
         actionType = "Wait";
         duration = 1;
-        strainPercentage = 0.5f;
+        inputStrainPercentage = 0.5f;
         ratePerSecond = 0.5f;
         hz = 0.5f;
     }
