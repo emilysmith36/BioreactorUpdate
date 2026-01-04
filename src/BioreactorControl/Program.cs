@@ -59,7 +59,7 @@ public class ExecutionManagement
     {
         for (int i = 0; i < reactorSettings.numberOfMotors; i++)
         {
-            motorList.Add(new MotorThread(i));
+            motorList.Add ( new MotorThread(i) );
         }
         motorListInitialized = true;
     }
@@ -132,7 +132,7 @@ public class MotorThread
 
     public void executeMotorAction( ProjectAction action )
     {
-        Console.WriteLine("Performing action " , action.actionType , " for ", action.duration , " seconds.");
+        action.PerformAction();
     }
 
 }
@@ -140,17 +140,41 @@ public class MotorThread
 public class ProjectAction
 {
     public string actionType { get; set; }
-    public int duration { get; set; }
-    public float inputStrainPercentage { get; set; }
-    public float ratePerSecond { get; set; }
-    public float hz { get; set; }
 
     public ProjectAction()
     {
-        actionType = "Wait";
-        duration = 1;
-        inputStrainPercentage = 0.5f;
-        ratePerSecond = 0.5f;
-        hz = 0.5f;
+        actionType = "Test Action";
     }
+
+    public void PerformAction()
+    {
+        Console.WriteLine("Performing Test Action.");
+        Console.WriteLine("Test Action Complete.");
+    }
+}
+
+public class ManualAction : ProjectAction
+{
+    public int rate;
+    public int position;
+
+    ManualAction()
+    {
+        actionType = "Manual Action";
+    }
+
+    public void PrintActionText()
+    {
+        Console.WriteLine($"Action Type: {actionType} Position: {rate} Rate: {rate}");
+    }
+
+    public void PerformAction()
+    {
+        Console.WriteLine($"Performing Action: {actionType} Position: {rate} Rate: {rate}");
+        // Blah blah coomplete the task
+        // PLACEHOLDER
+        // sdghsgdgksg
+        Console.WriteLine("Action Completed");
+    }
+
 }
