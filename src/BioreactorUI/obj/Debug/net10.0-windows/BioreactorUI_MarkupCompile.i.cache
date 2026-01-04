@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-D:\Bioreactor\BioreactorUpdate\src\BioreactorUI\obj\Debug\net10.0-windows\
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorUI\obj\Debug\net10.0-windows\
 BioreactorUI
 none
 false
 TRACE;DEBUG;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
-D:\Bioreactor\BioreactorUpdate\src\BioreactorUI\App.xaml
+C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorUI\App.xaml
 2560787874
 
 10968406077
-206-651866388
+207347106354
 MainWindow.xaml;SystemStatusControl.xaml;
 
-True
+False
 

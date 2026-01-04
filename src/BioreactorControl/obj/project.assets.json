@@ -8,19 +8,19 @@
     "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\ohall\\.nuget\\packages\\": {}
+    "C:\\Users\\panda\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Bioreactor\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl.csproj",
+      "projectUniqueName": "C:\\Users\\panda\\Documents\\School\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl.csproj",
       "projectName": "BioreactorControl",
-      "projectPath": "D:\\Bioreactor\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl.csproj",
-      "packagesPath": "C:\\Users\\ohall\\.nuget\\packages\\",
-      "outputPath": "D:\\Bioreactor\\BioreactorUpdate\\src\\BioreactorControl\\obj\\",
+      "projectPath": "C:\\Users\\panda\\Documents\\School\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl.csproj",
+      "packagesPath": "C:\\Users\\panda\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\panda\\Documents\\School\\BioreactorUpdate\\src\\BioreactorControl\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\ohall\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\panda\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -67,7 +67,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

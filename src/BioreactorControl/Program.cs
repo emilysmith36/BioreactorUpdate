@@ -111,16 +111,23 @@ public class MotorThread
 {
     private int motorID { get; set; }
     private bool connected { get; set; }
+    private float motorPosition { get; set; }
 
     public MotorThread(int id)
     {
         motorID = id;
         connected = true;
+        initMotorPositon();
+    }
+
+    public void initMotorPositon()
+    {
+        motorPosition = 0;
     }
 
     public void printMotorData()
     {
-        Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected}");
+        Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected} Position: {motorPosition}");
     }
 
     public void executeMotorAction( ProjectAction action )

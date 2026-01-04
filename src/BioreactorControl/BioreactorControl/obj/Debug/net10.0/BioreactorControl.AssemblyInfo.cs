@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+59d76a2107d4b69bf6de9bbe0c07cb858bd2a621")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a51c79968c0dc3f422b6bdd3f6622c5023b1b4c")]
 [assembly: System.Reflection.AssemblyProductAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BioreactorControl")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
