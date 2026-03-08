@@ -1,213 +1,289 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Buffers;
-using System.IO.Compression;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks.Dataflow;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
-using System.Runtime.Intrinsics.X86;
+using System.Threading.Tasks;
 
-Console.WriteLine("Hello, World!");
-Console.WriteLine("Starting Project");
-var reactorData = new ReactorSettings(1, 1);
-var projectData = new ProjectSettings( reactorData );
-var executionManager = new ExecutionManagement( projectData );
-executionManager.Initialize();
-executionManager.executeProject();
+Console.WriteLine("Starting Backend");
+
+BackendManagement backend = new BackendManagement();
+await backend.Initialize();
+await backend.StartProject();
+
+
+
+/* ---------------- BACKEND MANAGEMENT ---------------- */
+
+public class BackendManagement
+{
+    private ExecutionManagement executionManager;
+    private HistoryData history;
+
+    public async Task Initialize()
+    {
+        Console.WriteLine("Backend Manager Starting");
+
+        history = new HistoryData();
+
+        ReactorSettings reactor = new ReactorSettings(1, 3);
+        ProjectData project = new ProjectData(reactor);
+
+        executionManager = new ExecutionManagement(project, history);
+
+        await executionManager.Initialize();
+    }
+
+    public async Task StartProject()
+    {
+        await executionManager.ExecuteProject();
+    }
+}
+
+
+
+/* ---------------- EXECUTION MANAGEMENT ---------------- */
 
 public class ExecutionManagement
 {
-
+    private ProjectData projectData;
     private ReactorSettings reactorSettings;
-    private ProjectSettings projectSettings;
+    private HistoryData history;
 
-    private bool motorListInitialized;
-    public List<MotorData> motorList { get; set; }
-    public List<List<ProjectAction>> actionLists { get; set; }
+    private List<MotorData> motorList = new();
 
-    public ExecutionManagement(ProjectSettings projectData)
+    public ExecutionManagement(ProjectData project, HistoryData historyData)
     {
-        projectSettings = projectData;
-        reactorSettings = projectSettings.reactorSettings;
-        motorList = [];
-        actionLists = [];
+        projectData = project;
+        reactorSettings = project.reactorSettings;
+        history = historyData;
     }
 
-    public void Initialize()
+    public async Task Initialize()
     {
-        Console.WriteLine("Starting Execution Manager");
-        InitializeReactor();
+        Console.WriteLine("Execution Manager Starting");
+
+        await ConnectToReactor();
+        InitializeMotors();
     }
 
-    private void InitializeReactor()
+    private async Task ConnectToReactor()
     {
-        Console.WriteLine("Connecting To Reactor");
+        Console.WriteLine("Connecting To Reactor...");
+
+        await Task.Delay(500); // simulate hardware connection
+
         Console.WriteLine($"Reactor ID: {reactorSettings.reactorConnectionID}");
-        Console.WriteLine($"Number of Motors: {reactorSettings.numberOfMotors}");
-        motorListInitialized = false;
-        motorList = [];
-        Console.WriteLine("Reactor Connection Sucessful");
+        Console.WriteLine("Connection Successful");
     }
 
-    public void executeProject()
-    {
-        Console.WriteLine($"Executing Project of ID: {projectSettings.projectID}");
-        initializeMotorList();
-        printMotorList();
-        
-    }
-
-    public void initializeMotorList()
+    private void InitializeMotors()
     {
         for (int i = 0; i < reactorSettings.numberOfMotors; i++)
         {
-            motorList.Add ( new MotorData(i) );
+            motorList.Add(new MotorData(i));
         }
-        motorListInitialized = true;
     }
 
-    public void printMotorList()
+    public async Task ExecuteProject()
     {
-        if (motorListInitialized)
-        {
-            for (int i = 0; i < reactorSettings.numberOfMotors; i++)
-            {
-                motorList[i].printMotorData();
-            }
-        }
-        else
-        {
-            Console.WriteLine("Error: Motor List not initialized and unable to be printed.");
-        }
-    }
+        Console.WriteLine($"Executing Project {projectData.projectID}");
 
+        List<Task> tasks = new();
+
+        foreach (var motor in motorList)
+        {
+            tasks.Add(MotorThread.RunMotor(motor, projectData, history));
+        }
+
+        await Task.WhenAll(tasks);
+
+        Console.WriteLine("Project Execution Complete");
+
+        history.PrintHistory();
+    }
 }
+
+
+
+/* ---------------- PROJECT DATA ---------------- */
+
+public class ProjectData
+{
+    public ReactorSettings reactorSettings { get; set; }
+
+    public int projectID { get; set; }
+
+    public List<ProjectAction> actionList { get; set; }
+
+    public ProjectData(ReactorSettings reactor)
+    {
+        reactorSettings = reactor;
+
+        projectID = 1;
+
+        actionList = new List<ProjectAction>
+        {
+            new ManualAction(100,10),
+            new WaitAction(3),
+            new ManualAction(200,20)
+        };
+    }
+}
+
+
+
+/* ---------------- REACTOR SETTINGS ---------------- */
 
 public class ReactorSettings
 {
     public int reactorConnectionID { get; set; }
+
     public int numberOfMotors { get; set; }
 
-    public ReactorSettings (int connectionID, int motorsCount)
+    public ReactorSettings(int id, int motors)
     {
-        reactorConnectionID = connectionID;
-        numberOfMotors = motorsCount;
+        reactorConnectionID = id;
+        numberOfMotors = motors;
     }
-
 }
 
-public class ProjectSettings
-{
-    public ReactorSettings reactorSettings { get; set; }
-    public int projectID { get; set; }
 
-    public ProjectSettings ( ReactorSettings reactor )
-    {
-        reactorSettings = reactor;
-        projectID = 0;
-    }
 
-}
+/* ---------------- MOTOR DATA ---------------- */
 
 public class MotorData
 {
     public int motorID { get; set; }
-    private bool connected { get; set; }
-    private float motorPosition { get; set; }
-    private int executionStage { get; set; }
+
+    public float motorPosition { get; set; }
+
+    public bool connected { get; set; }
 
     public MotorData(int id)
     {
         motorID = id;
-        connected = true;
-        executionStage = 0;
-        initMotorPositon();
-    }
-
-    public void initMotorPositon()
-    {
         motorPosition = 0;
-    }
-
-    public void printMotorData()
-    {
-        Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected} Position: {motorPosition}");
-    }
-
-}
-
-public class MotorThread
-{
-    private int motorID { get; set; }
-    private bool connected { get; set; }
-    private float motorPosition { get; set; } // in mm from base pos
-    private MotorData parentMotorData {get ; set;}
-
-    public MotorThread( MotorData parent )
-    {
-        parentMotorData = parent;
-        motorID = parent.motorID;
         connected = true;
-        queryMotorPositon();
     }
-
-    public float queryMotorPositon()
-    {
-        return 0.0f; //WIP Placeholder
-    }
-
-    public void printMotorData()
-    {
-        Console.WriteLine($"Printing Data for Motor of ID: {motorID} Connected?: {connected} Position: {motorPosition}");
-    }
-
-    public void executeMotorAction( ProjectAction action )
-    {
-        action.PerformAction();
-    }
-
 }
+
+
+
+/* ---------------- MOTOR THREAD (ASYNC WORKER) ---------------- */
+
+public static class MotorThread
+{
+    public static async Task RunMotor(
+        MotorData motor,
+        ProjectData project,
+        HistoryData history)
+    {
+        Console.WriteLine($"Motor {motor.motorID} starting execution");
+
+        foreach (var action in project.actionList)
+        {
+            await action.PerformAction(motor);
+
+            history.RecordAction(motor.motorID, action.actionType);
+        }
+
+        Console.WriteLine($"Motor {motor.motorID} finished execution");
+    }
+}
+
+
+
+/* ---------------- THREAD SAFE HISTORY ---------------- */
+
+public class HistoryData
+{
+    private ConcurrentQueue<string> historyLog = new();
+
+    private SemaphoreSlim logLock = new(1,1);
+
+    public async void RecordAction(int motorID, string action)
+    {
+        await logLock.WaitAsync();
+
+        try
+        {
+            string log = $"Motor {motorID} executed {action}";
+            historyLog.Enqueue(log);
+
+            Console.WriteLine($"History Logged: {log}");
+        }
+        finally
+        {
+            logLock.Release();
+        }
+    }
+
+    public void PrintHistory()
+    {
+        Console.WriteLine("\n---- ACTION HISTORY ----");
+
+        foreach (var entry in historyLog)
+        {
+            Console.WriteLine(entry);
+        }
+    }
+}
+
+
+
+/* Project ACtions: */
 
 public class ProjectAction
 {
     public string actionType { get; set; }
 
-    public ProjectAction()
+    public virtual async Task PerformAction(MotorData motor)
     {
-        actionType = "Test Action";
-    }
+        Console.WriteLine("Performing Base Action");
 
-    public virtual void PerformAction()
-    {
-        Console.WriteLine("Performing Test Action.");
-        // Empty because test action does nothing
-        // In the future, maybe pinging the motor might be good here though for testing
-        Console.WriteLine("Test Action Complete.");
+        await Task.Delay(500);
     }
 }
 
 public class ManualAction : ProjectAction
 {
-    public int rate;
     public int position;
+    public int rate;
 
-    ManualAction()
+    public ManualAction(int pos, int rateValue)
     {
         actionType = "Manual Action";
+
+        position = pos;
+        rate = rateValue;
     }
 
-    public void PrintActionText()
+    public override async Task PerformAction(MotorData motor)
     {
-        Console.WriteLine($"Action Type: {actionType} Position: {rate} Rate: {rate}");
-    }
+        Console.WriteLine($"Motor {motor.motorID} moving to {position} at rate {rate}");
 
-    public override void PerformAction()
+        await Task.Delay(1000);
+
+        motor.motorPosition = position;
+    }
+}
+
+public class WaitAction : ProjectAction
+{
+    public int waitSeconds;
+
+    public WaitAction(int seconds)
     {
-        Console.WriteLine($"Performing Action: {actionType} Position: {rate} Rate: {rate}");
-        // Blah blah coomplete the task
-        // PLACEHOLDER
-        // sdghsgdgksg
-        Console.WriteLine("Action Completed");
+        actionType = "Wait Action";
+        waitSeconds = seconds;
     }
 
+    public override async Task PerformAction(MotorData motor)
+    {
+        Console.WriteLine($"Motor {motor.motorID} waiting for {waitSeconds} seconds");
+
+        await Task.Delay(waitSeconds * 1000);
+
+        Console.WriteLine($"Motor {motor.motorID} finished waiting");
+    }
 }
