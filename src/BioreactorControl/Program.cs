@@ -121,10 +121,16 @@ public class ProjectData
 
         projectID = 1;
 
+        // Building Example Action lists:
+        var loop = new LoopAction(3);
+        loop.AddAction(new ManualAction(100, 10));
+        loop.AddAction(new WaitAction(2));
+        loop.AddAction(new ManualAction(0, 10));
         actionList = new List<ProjectAction>
         {
             new ManualAction(100,10),
             new WaitAction(3),
+            loop,
             new ManualAction(200,20)
         };
     }
@@ -285,5 +291,40 @@ public class WaitAction : ProjectAction
         await Task.Delay(waitSeconds * 1000);
 
         Console.WriteLine($"Motor {motor.motorID} finished waiting");
+    }
+}
+
+public class LoopAction : ProjectAction
+{
+    public int loopCount;
+    public List<ProjectAction> loopActions;
+
+    public LoopAction(int count)
+    {
+        actionType = "Loop Action";
+        loopCount = count;
+        loopActions = new List<ProjectAction>();
+    }
+
+    public void AddAction(ProjectAction action)
+    {
+        loopActions.Add(action);
+    }
+
+    public override async Task PerformAction(MotorData motor)
+    {
+        Console.WriteLine($"Motor {motor.motorID} starting loop ({loopCount} iterations)");
+
+        for (int i = 0; i < loopCount; i++)
+        {
+            Console.WriteLine($"Motor {motor.motorID} loop iteration {i + 1}");
+
+            foreach (var action in loopActions)
+            {
+                await action.PerformAction(motor);
+            }
+        }
+
+        Console.WriteLine($"Motor {motor.motorID} finished loop");
     }
 }
