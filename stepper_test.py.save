@@ -1,0 +1,27 @@
+import RPi.GPIO as GPIO
+import time
+
+STEP_PIN = 17
+DIR_PIN  = 27
+ENA_PIN  = 22
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(STEP_PIN, GPIO.OUT)
+GPIO.setup(DIR_PIN, GPIO.OUT)
+GPIO.setup(ENA_PIN, GPIO.OUT)
+
+GPIO.output(ENA_PIN, GPIO.LOW)    # Enable driver
+GPIO.output(DIR_PIN, GPIO.HIGH)   # Set direction
+
+print("Stepper test running. Press CTRL+C to stop.")
+
+try:
+    while True:
+        GPIO.output(STEP_PIN, GPIO.HIGH)
+        time.sleep(0.002)
+        GPIO.output(STEP_PIN, GPIO.LOW)
+        time.sleep(0.002)
+
+except KeyboardInterrupt:
+    print("\nStopping motor.")
+    GPIO.cleanup()
