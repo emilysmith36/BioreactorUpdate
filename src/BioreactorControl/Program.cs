@@ -19,15 +19,11 @@ public class BackendManagement
     private ExecutionManagement executionManager;
     private HistoryData history;
 
-    public async Task Initialize()
+    public async Task Initialize(ProjectData project)
     {
         Console.WriteLine("Backend Manager Starting");
 
         history = new HistoryData();
-
-        ReactorSettings reactor = new ReactorSettings(1, 3);
-        ProjectData project = new ProjectData(reactor);
-
         executionManager = new ExecutionManagement(project, history);
 
         await executionManager.Initialize();
@@ -38,7 +34,6 @@ public class BackendManagement
         await executionManager.ExecuteProject();
     }
 }
-
 
 
 /* ---------------- EXECUTION MANAGEMENT ---------------- */
@@ -110,29 +105,14 @@ public class ExecutionManagement
 public class ProjectData
 {
     public ReactorSettings reactorSettings { get; set; }
-
     public int projectID { get; set; }
-
     public List<ProjectAction> actionList { get; set; }
 
     public ProjectData(ReactorSettings reactor)
     {
         reactorSettings = reactor;
-
         projectID = 1;
-
-        // Building Example Action lists:
-        var loop = new LoopAction(3);
-        loop.AddAction(new ManualAction(100, 10));
-        loop.AddAction(new WaitAction(2));
-        loop.AddAction(new ManualAction(0, 10));
-        actionList = new List<ProjectAction>
-        {
-            new ManualAction(100,10),
-            new WaitAction(3),
-            loop,
-            new ManualAction(200,20)
-        };
+        actionList = new List<ProjectAction>(); // empty list, to be filled externally
     }
 }
 
@@ -179,18 +159,25 @@ public class MotorData
 
 public static class MotorThread
 {
-    public static async Task RunMotor(
-        MotorData motor,
-        ProjectData project,
-        HistoryData history)
+    public static async Task RunMotor(MotorData motor, ProjectData project, HistoryData history)
     {
         Console.WriteLine($"Motor {motor.motorID} starting execution");
 
-        foreach (var action in project.actionList)
-        {
-            await action.PerformAction(motor);
+        // Copy the action list at the start to allow UI modifications before starting
+        var actionsToRun = new List<ProjectAction>(project.actionList);
 
-            history.RecordAction(motor.motorID, action.actionType);
+        foreach (var action in actionsToRun)
+        {
+            try
+            {
+                await action.PerformAction(motor);
+
+                await history.RecordActionAsync(motor.motorID, action.actionType);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Motor {motor.motorID} encountered an error: {ex.Message}");
+            }
         }
 
         Console.WriteLine($"Motor {motor.motorID} finished execution");
@@ -198,16 +185,14 @@ public static class MotorThread
 }
 
 
-
 /* ---------------- THREAD SAFE HISTORY ---------------- */
 
 public class HistoryData
 {
     private ConcurrentQueue<string> historyLog = new();
-
     private SemaphoreSlim logLock = new(1,1);
 
-    public async void RecordAction(int motorID, string action)
+    public async Task RecordActionAsync(int motorID, string action)
     {
         await logLock.WaitAsync();
 
@@ -215,7 +200,6 @@ public class HistoryData
         {
             string log = $"Motor {motorID} executed {action}";
             historyLog.Enqueue(log);
-
             Console.WriteLine($"History Logged: {log}");
         }
         finally
@@ -227,7 +211,6 @@ public class HistoryData
     public void PrintHistory()
     {
         Console.WriteLine("\n---- ACTION HISTORY ----");
-
         foreach (var entry in historyLog)
         {
             Console.WriteLine(entry);
@@ -296,26 +279,37 @@ public class WaitAction : ProjectAction
 
 public class LoopAction : ProjectAction
 {
-    public int loopCount;
-    public List<ProjectAction> loopActions;
+    private List<ProjectAction> loopActions = new(); // private for encapsulation
+
+    public int LoopCount { get; set; }
 
     public LoopAction(int count)
     {
         actionType = "Loop Action";
-        loopCount = count;
-        loopActions = new List<ProjectAction>();
+        LoopCount = count;
     }
 
+    // UI can dynamically add/remove actions
     public void AddAction(ProjectAction action)
     {
         loopActions.Add(action);
     }
 
+    public void RemoveAction(ProjectAction action)
+    {
+        loopActions.Remove(action);
+    }
+
+    public IReadOnlyList<ProjectAction> GetActions()
+    {
+        return loopActions.AsReadOnly();
+    }
+
     public override async Task PerformAction(MotorData motor)
     {
-        Console.WriteLine($"Motor {motor.motorID} starting loop ({loopCount} iterations)");
+        Console.WriteLine($"Motor {motor.motorID} starting loop ({LoopCount} iterations)");
 
-        for (int i = 0; i < loopCount; i++)
+        for (int i = 0; i < LoopCount; i++)
         {
             Console.WriteLine($"Motor {motor.motorID} loop iteration {i + 1}");
 
@@ -328,3 +322,4 @@ public class LoopAction : ProjectAction
         Console.WriteLine($"Motor {motor.motorID} finished loop");
     }
 }
+
