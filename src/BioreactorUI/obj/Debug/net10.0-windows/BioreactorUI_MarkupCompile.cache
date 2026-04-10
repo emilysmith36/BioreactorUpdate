@@ -1,5 +1,5 @@
 ﻿BioreactorUI
-
+1.0.0.0
 
 winexe
 C#
@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_O
 C:\Users\panda\Documents\School\BioreactorUpdate\src\BioreactorUI\App.xaml
 2560787874
 
-8-1253622347
-207347106354
+10968406077
+2061245606974
 MainWindow.xaml;SystemStatusControl.xaml;
 
-False
+True
 

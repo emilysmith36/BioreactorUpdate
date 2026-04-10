@@ -1,5 +1,6 @@
 namespace BioreactorControl.Projects;
 
+using System.Diagnostics.Metrics;
 using BioreactorControl.Motors;
 
 /* ---------------- PROJECT DATA ---------------- */
@@ -157,5 +158,53 @@ public class LoopAction : ProjectAction
         }
 
         Console.WriteLine($"Motor {motor.MotorID}: Finished loop");
+    }
+}
+
+/* ---------------- CYCLE-BASED ACTION ---------------- */
+public class CycleBasedAction : ProjectAction
+{
+    // Data:
+    public string Direction { get; set; } 
+    public float Rate { get; set; }  // per second? Per minute? Per Hour? --> needs clarification
+    public float Frequency { get; set; } // in Hz
+    public float Displacement { get; set; } // in mm
+    public float Duration { get; set; } // in minutes
+    public int Cycles { get; set; }
+    public bool UseCycles { get; set; }
+
+    // Constructor
+    public CycleBasedAction(
+        string direction,
+        float rate,
+        float frequency,
+        float displacement,
+        float duration,
+        int cycles,
+        bool useCycles
+    ) : base("Cycle-Based Action")
+    {
+        Direction = direction;
+        Rate = rate;
+        Frequency = frequency;
+        Displacement = displacement;
+        Duration = duration;
+        Cycles = cycles;
+        UseCycles = useCycles;
+    }
+
+    // Empty execution for now
+    public override async Task PerformAction(MotorController motor)
+    {
+        if (motor.State != MotorState.Running)
+        {
+            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping CycleBasedAction.");
+            return;
+        }
+
+        Console.WriteLine($"Motor {motor.MotorID}: Cycle-based action started with {Cycles} cycles.");
+
+        // TODO: Implement actual cycle logic later
+        await Task.CompletedTask;
     }
 }

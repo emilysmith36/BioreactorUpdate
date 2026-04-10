@@ -1,30 +1,11 @@
 {
   "version": 3,
   "targets": {
-    "net10.0-windows7.0": {
-      "BioreactorControl/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v10.0",
-        "compile": {
-          "bin/placeholder/BioreactorControl.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/BioreactorControl.dll": {}
-        }
-      }
-    }
+    "net10.0-windows7.0": {}
   },
-  "libraries": {
-    "BioreactorControl/1.0.0": {
-      "type": "project",
-      "path": "../BioreactorControl/BioreactorControl/BioreactorControl.csproj",
-      "msbuildProject": "../BioreactorControl/BioreactorControl/BioreactorControl.csproj"
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net10.0-windows7.0": [
-      "BioreactorControl >= 1.0.0"
-    ]
+    "net10.0-windows7.0": []
   },
   "packageFolders": {
     "C:\\Users\\panda\\.nuget\\packages\\": {}
@@ -52,11 +33,7 @@
       "frameworks": {
         "net10.0-windows7.0": {
           "targetAlias": "net10.0-windows",
-          "projectReferences": {
-            "C:\\Users\\panda\\Documents\\School\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl\\BioreactorControl.csproj": {
-              "projectPath": "C:\\Users\\panda\\Documents\\School\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl\\BioreactorControl.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {
