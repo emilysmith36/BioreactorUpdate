@@ -2,9 +2,9 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox, scrolledtext
 import copy
-import queue
-import threading
 import time
+
+from backend_bridge import UiMockBackend
 
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
@@ -178,11 +178,9 @@ class App(tk.Tk):
         self.state = {m: "idle" for m in self.motors}
         self.current_step = {m: "Step: idle" for m in self.motors}
         self.programs = {m: [] for m in self.motors}
-        self.jog_jobs = {}
-        self.run_contexts = {}
         self.status_indicators = {m: [] for m in self.motors}
         self.paused = False
-        self.ui_queue = queue.Queue()
+        self.bridge = UiMockBackend(self.motors)
 
         root = ttk.Frame(self)
         root.pack(fill="both", expand=True)
@@ -204,24 +202,61 @@ class App(tk.Tk):
         }
 
         self.show("control")
-        self.after(50, self.process_ui_queue)
+        self.bridge.connect()
+        self.after(50, self.process_bridge_events)
 
     def show(self, name):
         for p in self.pages.values():
             p.grid_forget()
         self.pages[name].grid(row=0, column=0, sticky="nsew")
 
-    def process_ui_queue(self):
-        while True:
-            try:
-                func, args, kwargs = self.ui_queue.get_nowait()
-            except queue.Empty:
-                break
-            func(*args, **kwargs)
-        self.after(50, self.process_ui_queue)
+    def process_bridge_events(self):
+        for event in self.bridge.poll_events():
+            self.apply_bridge_event(event)
+        self.refresh_experiment_status_from_state()
+        self.after(50, self.process_bridge_events)
 
-    def post_ui(self, func, *args, **kwargs):
-        self.ui_queue.put((func, args, kwargs))
+    def apply_bridge_event(self, event):
+        event_type = event["type"]
+        if event_type == "log":
+            self.add_log(event["message"])
+            return
+        if event_type == "motor_state":
+            self.set_motor_state(event["motor"], event["state"])
+            return
+        if event_type == "motor_position":
+            self.pos[event["motor"]] = event["position"]
+            self.update_motor_label(event["motor"])
+            return
+        if event_type == "motor_step":
+            self.set_motor_step(event["motor"], event["step"])
+            return
+
+    def refresh_experiment_status_from_state(self):
+        if self.paused:
+            self.set_experiment_status(
+                "Experiment Status: Emergency-paused",
+                pause_state="disabled",
+                continue_state="normal",
+                stop_state="normal",
+            )
+            return
+
+        if any(self.bridge.has_active_run(motor) for motor in self.motors):
+            self.set_experiment_status(
+                "Experiment Status: Running",
+                pause_state="normal",
+                continue_state="disabled",
+                stop_state="disabled",
+            )
+            return
+
+        self.set_experiment_status(
+            "Experiment Status: Ready",
+            pause_state="normal",
+            continue_state="disabled",
+            stop_state="disabled",
+        )
 
     def add_log(self, text):
         line = f"{time.strftime('%H:%M:%S')}  {text}"
@@ -305,17 +340,20 @@ class App(tk.Tk):
         self.update_motor_label(motor)
 
     def has_active_run(self, motor):
-        return motor in self.run_contexts
+        return self.bridge.has_active_run(motor)
 
     def active_run_motors(self):
-        return [motor for motor in self.motors if motor in self.run_contexts]
+        return [motor for motor in self.motors if self.bridge.has_active_run(motor)]
 
     def can_manual_control(self, motor):
         if self.paused:
             self.add_log("[WARN] Cannot move while paused")
             return False
-        if motor in self.run_contexts:
+        if self.bridge.has_active_run(motor):
             self.add_log(f"[WARN] {motor} is executing a program")
+            return False
+        if self.state[motor] == "jogging":
+            self.add_log(f"[WARN] {motor} is already jogging")
             return False
         return True
 
@@ -349,65 +387,26 @@ class App(tk.Tk):
 
         return expanded
 
-    def wait_if_paused(self, motor, context):
-        while context["pause_event"].is_set():
-            if context["stop_event"].wait(0.1):
-                return False
-        return not context["stop_event"].is_set()
+    def serialize_backend_step(self, step, i):
+        displacement_mm = self.action_displacement_mm(step)
+        estimated_seconds = self.action_duration_seconds(step)
+        return {
+            "type": "action",
+            "direction": step["direction"],
+            "rate": step["rate"],
+            "frequency_hz": step["freq"],
+            "displacement_mm": displacement_mm,
+            "timing_mode": step["timing_mode"],
+            "duration_seconds": estimated_seconds,
+            "estimated_seconds": estimated_seconds,
+            "cycles": step["cycles"],
+            "target_position_mm": displacement_mm if step["direction"] == "tension" else -displacement_mm,
+            "label": self.step_text(step, i)[8:],
+        }
 
-    def execute_motor_program(self, motor, sequence, context):
-        self.post_ui(self.add_log, f"[RUN START] {motor} loaded {len(sequence)} action steps")
-
-        try:
-            for i, step in enumerate(sequence, start=1):
-                if context["stop_event"].is_set():
-                    break
-                if not self.wait_if_paused(motor, context):
-                    break
-
-                self.post_ui(self.set_motor_state, motor, "running")
-                self.post_ui(self.set_motor_step, motor, f"Step: {i}/{len(sequence)}")
-                self.post_ui(self.add_log, f"[RUN] {motor} step {i}: {self.step_text(step, i)[8:]}")
-
-                step_seconds = self.action_duration_seconds(step)
-                started = time.time()
-
-                while time.time() - started < step_seconds:
-                    if context["stop_event"].is_set():
-                        break
-                    if not self.wait_if_paused(motor, context):
-                        break
-                    time.sleep(0.05)
-
-                if context["stop_event"].is_set():
-                    break
-
-                self.post_ui(self.add_log, f"[STEP COMPLETE] {motor} step {i}")
-
-            if context["stop_event"].is_set():
-                self.post_ui(self.set_motor_step, motor, "Step: discarded")
-                self.post_ui(self.add_log, f"[RUN DISCARDED] {motor} loaded sequence cleared")
-            else:
-                self.post_ui(self.set_motor_step, motor, "Step: complete")
-                self.post_ui(self.add_log, f"[RUN COMPLETE] {motor}")
-        finally:
-            self.post_ui(self.finish_motor_run, motor)
-
-    def finish_motor_run(self, motor):
-        self.run_contexts.pop(motor, None)
-        if motor not in self.jog_jobs:
-            self.set_motor_state(motor, "idle")
-        if self.current_step[motor] in ("Step: complete", "Step: discarded"):
-            self.after(1500, lambda m=motor: self.set_motor_step(m, "Step: idle"))
-
-        if not self.active_run_motors():
-            self.paused = False
-            self.set_experiment_status(
-                "Experiment Status: Ready",
-                pause_state="normal",
-                continue_state="disabled",
-                stop_state="disabled",
-            )
+    def build_backend_sequence(self, motor):
+        expanded = self.expand_program(self.programs[motor])
+        return [self.serialize_backend_step(step, i) for i, step in enumerate(expanded, start=1)]
 
     def make_control_page(self, parent):
         frame = ttk.Frame(parent)
@@ -580,47 +579,19 @@ class App(tk.Tk):
         motor = self.sel_motor.get()
         if not self.can_manual_control(motor):
             return
-        if motor in self.jog_jobs:
-            return
         try:
             rate = float(self.jog_rate.get())
         except Exception:
             rate = 1.0
-        self.state[motor] = "jogging"
-        self.update_motor_label(motor)
-        self.add_log(f"[JOG START] {motor} dir={'up' if direction > 0 else 'down'} rate={rate}")
-        last = time.time()
-
-        def tick():
-            nonlocal last
-            now = time.time()
-            dt = now - last
-            last = now
-            self.pos[motor] += rate * dt * direction
-            self.update_motor_label(motor)
-            self.jog_jobs[motor] = self.after(100, tick)
-
-        self.jog_jobs[motor] = self.after(100, tick)
+        self.bridge.jog_start(motor, rate, direction)
 
     def stop_jog(self):
         motor = self.sel_motor.get()
-        job = self.jog_jobs.pop(motor, None)
-        if not job:
-            return
-        try:
-            self.after_cancel(job)
-        except Exception:
-            pass
-        self.state[motor] = "idle"
-        self.update_motor_label(motor)
-        self.add_log(f"[JOG STOP] {motor}")
+        self.bridge.jog_stop(motor)
 
     def move_relative(self):
         motor = self.sel_motor.get()
         if not self.can_manual_control(motor):
-            return
-        if motor in self.jog_jobs:
-            self.add_log(f"[WARN] {motor} is already jogging")
             return
         try:
             value = float(self.rel.get())
@@ -630,13 +601,7 @@ class App(tk.Tk):
         if value == 0:
             self.add_log(f"[MOVE] {motor} relative zero ignored")
             return
-        self.state[motor] = "moving"
-        self.update_motor_label(motor)
-        self.add_log(f"[MOVE START] {motor} relative {value}")
-        self.pos[motor] += value
-        self.state[motor] = "idle"
-        self.update_motor_label(motor)
-        self.add_log(f"[MOVE END] {motor} pos={self.pos[motor]:.3f}")
+        self.bridge.move_relative(motor, value)
 
     def move_absolute(self):
         try:
@@ -644,52 +609,21 @@ class App(tk.Tk):
         except Exception:
             self.add_log("[WARN] invalid absolute value")
             return
-        self.rel.set(target - self.pos[self.sel_motor.get()])
-        self.move_relative()
+        self.bridge.move_absolute(self.sel_motor.get(), target)
 
     def emergency_stop(self):
         if self.paused:
             return
-        active = self.active_run_motors()
-        for motor in self.motors:
-            job = self.jog_jobs.pop(motor, None)
-            if job:
-                try:
-                    self.after_cancel(job)
-                except Exception:
-                    pass
-                self.set_motor_state(motor, "paused")
-        for motor in active:
-            context = self.run_contexts.get(motor)
-            if context:
-                context["pause_event"].set()
-                self.set_motor_state(motor, "paused")
         self.paused = True
-        self.set_experiment_status(
-            "Experiment Status: Emergency-paused",
-            pause_state="disabled",
-            continue_state="normal",
-            stop_state="normal",
-        )
-        self.add_log("[EMERGENCY STOP] Motion paused. Choose Continue or Stop Experiment.")
+        self.bridge.pause_all()
+        self.refresh_experiment_status_from_state()
 
     def continue_experiment(self):
         if not self.paused:
             return
         self.paused = False
-        for motor in self.motors:
-            if motor in self.run_contexts:
-                self.run_contexts[motor]["pause_event"].clear()
-                self.set_motor_state(motor, "running")
-            elif self.state[motor] == "paused":
-                self.set_motor_state(motor, "idle")
-        self.set_experiment_status(
-            "Experiment Status: Ready",
-            pause_state="normal",
-            continue_state="disabled",
-            stop_state="disabled",
-        )
-        self.add_log("[EXPERIMENT CONTINUE] Pause cleared.")
+        self.bridge.resume_all()
+        self.refresh_experiment_status_from_state()
 
     def stop_experiment(self):
         active_runs = self.active_run_motors()
@@ -703,35 +637,9 @@ class App(tk.Tk):
                 self.add_log("[STOP CANCELLED] Active sequence kept.")
                 return
 
-        had_active = False
-        for motor in self.motors:
-            job = self.jog_jobs.pop(motor, None)
-            if job:
-                try:
-                    self.after_cancel(job)
-                except Exception:
-                    pass
-                had_active = True
-            context = self.run_contexts.get(motor)
-            if context:
-                context["pause_event"].clear()
-                context["stop_event"].set()
-                had_active = True
-                self.set_motor_state(motor, "stopping")
-                self.set_motor_step(motor, "Step: stopping")
-            elif motor not in self.jog_jobs:
-                self.set_motor_state(motor, "idle")
         self.paused = False
-        self.set_experiment_status(
-            "Experiment Status: Ready",
-            pause_state="normal",
-            continue_state="disabled",
-            stop_state="disabled",
-        )
-        if had_active:
-            self.add_log("[EXPERIMENT STOPPED] Active motion discarded.")
-        else:
-            self.add_log("[EXPERIMENT STOPPED] No active motion to discard.")
+        self.bridge.abort_all()
+        self.refresh_experiment_status_from_state()
 
     def step_text(self, step, i):
         if step["type"] == "loop":
@@ -849,31 +757,12 @@ class App(tk.Tk):
                 self.add_log(f"[WARN] {motor} has no program to submit")
                 continue
 
-            expanded = self.expand_program(steps)
-            context = {
-                "pause_event": threading.Event(),
-                "stop_event": threading.Event(),
-                "sequence": expanded,
-            }
-            worker = threading.Thread(
-                target=self.execute_motor_program,
-                args=(motor, expanded, context),
-                daemon=True,
-            )
-            context["thread"] = worker
-            self.run_contexts[motor] = context
-            self.add_log(f"[PROGRAM SUBMIT] {motor}")
-            self.set_motor_state(motor, "queued")
-            worker.start()
-            started += 1
+            sequence = self.build_backend_sequence(motor)
+            if self.bridge.load_program(motor, sequence) and self.bridge.start_program(motor):
+                started += 1
 
         if started:
-            self.set_experiment_status(
-                "Experiment Status: Running",
-                pause_state="normal",
-                continue_state="disabled",
-                stop_state="disabled",
-            )
+            self.refresh_experiment_status_from_state()
 
 def main():
     app = App()
