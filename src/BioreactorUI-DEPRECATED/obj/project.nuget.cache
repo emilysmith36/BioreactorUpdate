@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "dgSpecHash": "WvbPfl8YeiQ=",
+  "success": false,
+  "projectFilePath": "C:\\Users\\Keagan\\Desktop\\ClassesOriginal\\2026 Spring\\Capstone\\BioreactorUpdate\\src\\BioreactorUI\\BioreactorUI.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1104",
+      "level": "Error",
+      "message": "Unable to find project 'C:\\Users\\Keagan\\Desktop\\ClassesOriginal\\2026 Spring\\Capstone\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl\\BioreactorControl.csproj'. Check that the project reference is valid and that the project file exists.",
+      "projectPath": "C:\\Users\\Keagan\\Desktop\\ClassesOriginal\\2026 Spring\\Capstone\\BioreactorUpdate\\src\\BioreactorUI\\BioreactorUI.csproj",
+      "filePath": "C:\\Users\\Keagan\\Desktop\\ClassesOriginal\\2026 Spring\\Capstone\\BioreactorUpdate\\src\\BioreactorUI\\BioreactorUI.csproj",
+      "libraryId": "C:\\Users\\Keagan\\Desktop\\ClassesOriginal\\2026 Spring\\Capstone\\BioreactorUpdate\\src\\BioreactorControl\\BioreactorControl\\BioreactorControl.csproj",
+      "targetGraphs": [
+        "net10.0-windows7.0"
+      ]
+    }
+  ]
+}
