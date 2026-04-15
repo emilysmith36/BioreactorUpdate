@@ -3,38 +3,78 @@
 
 namespace BioreactorControl.Backend;
 
+// BackendManagement.cs
 using System.Collections.Concurrent;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
 
+public class BioreactorEvent {
+    // Adding 'null!' or 'string.Empty' resolves the CS8618 warnings
+    public string Type { get; set; } = string.Empty; 
+    public string Motor { get; set; } = string.Empty;
+    public object? Message { get; set; } 
+    public float Position { get; set; }
+    public string State { get; set; } = string.Empty;
+    public string Step { get; set; } = string.Empty;
+}
+
 public class BackendManagement
 {
-    private List<MotorController> motors = new();
+    // Make this public so Program.cs can access it
+    public List<MotorController> Motors { get; } = new();
+    private ConcurrentQueue<BioreactorEvent> eventQueue = new();
 
     public async Task Initialize()
     {
-        ReactorSettings reactor = new ReactorSettings(1, 3);
-
-        for (int i = 0; i < reactor.numberOfMotors; i++)
+        // Adjust the number of motors based on your hardware
+        int numberOfMotors = 3; 
+        for (int i = 0; i < numberOfMotors; i++)
         {
-            motors.Add(new MotorController(i));
+            Motors.Add(new MotorController(i));
         }
-
-        await Task.WhenAll(motors.Select(m => m.CreateProjectAsync()));
-    }
-
-    public async Task StartAll()
-    {
-        await Task.WhenAll(motors.Select(m => m.Start()));
+        
+        // Use the existing CreateProjectAsync logic if needed
+        await Task.WhenAll(Motors.Select(m => m.CreateProjectAsync()));
     }
 
     public void EmergencyStopAll()
     {
-        foreach (var motor in motors)
+        foreach (var motor in Motors)
         {
             motor.EmergencyStop();
         }
     }
+
+    public void PushEvent(BioreactorEvent ev) => eventQueue.Enqueue(ev);
+
+    public List<BioreactorEvent> DequeueEvents() {
+        var events = new List<BioreactorEvent>();
+        while (eventQueue.TryDequeue(out var ev)) events.Add(ev);
+        return events;
+    }
+}
+
+// Add these classes to your project (e.g., in a new file Models.cs)
+public class ProgramLoadRequest {
+    public string Motor { get; set; } = string.Empty; // e.g. "Motor 1"
+    public List<StepPayload> Steps { get; set; } = new();
+}
+
+public class StepPayload {
+    public string type { get; set; } = string.Empty;
+    public string direction { get; set; } = string.Empty;
+    public float rate { get; set; }
+    public float frequency_hz { get; set; }
+    public float displacement_mm { get; set; }
+    public string timing_mode { get; set; } = string.Empty;
+    public float duration_seconds { get; set; }
+    public int cycles { get; set; }
+}
+
+public class JogRequest {
+    public string Motor { get; set; } = string.Empty;
+    public float Rate { get; set; }
+    public string Direction { get; set; } = string.Empty;
 }
 
 public class HistoryData
@@ -67,6 +107,8 @@ public class HistoryData
         }
     }
 }
+
+
 
 
 // Old system, functionality moved to motorcontroller to allow multiple async projects with each motor instead of one project controlling all three

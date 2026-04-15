@@ -1,88 +1,131 @@
-﻿// Program.c - main file:
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using BioreactorControl.Backend;
+﻿using BioreactorControl.Backend;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
 
-Console.WriteLine("Starting Backend");
-
-BackendManagement backend = new BackendManagement();
-await backend.Initialize();
-
-// Toggle this to run the test project automatically on startup
-bool runTestOnStartup = false;
-
-Task? runTask = null;
-
-if (runTestOnStartup)
-{
-    // Start the test projects with staggered motors
-    runTask = RunStaggeredMotorTest();
-}
-
-// Example: simulate emergency stop after 3 seconds
-await Task.Delay(3000);
-backend.EmergencyStopAll();
-
-// Wait for the motor projects to finish (if started)
-if (runTask != null)
-{
-    await runTask;
-}
-
-Console.WriteLine("Backend program completed.");
 
 
-//////////////////////////
-/// Local Functions for testing:
-//////////////////////////////////////////
+var builder = WebApplication.CreateBuilder(args);
 
-async Task RunStaggeredMotorTest()
-{
-    int numberOfMotors = 3;
-    List<MotorController> motors = new();
-    List<Task> motorTasks = new();
+builder.Logging.SetMinimumLevel(LogLevel.Warning); // Reduces logging  noise (was printing every position update)
 
-    for (int i = 0; i < numberOfMotors; i++)
+// Add the backend as a "Singleton" so every API call talks to the SAME motors
+builder.Services.AddSingleton<BackendManagement>();
+
+var app = builder.Build();
+
+// 1. Initialize the hardware/motors once at startup
+var backendInstance = app.Services.GetRequiredService<BackendManagement>();
+Program.Backend = backendInstance; 
+
+await Program.Backend.Initialize();
+
+// --- API ROUTES ---
+
+// Global health check
+app.MapGet("/api/status", () => Results.Ok("Backend is running"));
+
+// Get status for a SPECIFIC motor (Fixes the 404 error)
+app.MapGet("/api/status/all", (BackendManagement backend) => {
+    return Results.Ok(backend.Motors.Select(m => new {
+        motor = $"Motor {m.MotorID + 1}",
+        isRunning = m.State == MotorState.Running,
+        position = m.motorPosition,
+        state = m.State.ToString()
+    }));
+});
+
+// Event polling for logs and position updates
+app.MapGet("/api/events", (BackendManagement backend) => 
+    Results.Ok(backend.DequeueEvents()));
+
+// Load Program
+app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) => {
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
-        var motor = new MotorController(i);
-        motors.Add(motor);
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count)
+        {
+            var motor = backend.Motors[index];
+            var actions = req.Steps.Select(s => new CycleBasedAction(
+                s.direction, s.rate, s.frequency_hz, s.displacement_mm, 
+                s.duration_seconds, s.cycles, s.timing_mode == "cycles"
+            )).Cast<ProjectAction>().ToList();
 
-        // Create a project for each motor
-        var actions = BuildMotorActions();
-        motor.CreateProject(actions);  // <-- fixed
-
-        // Start the motor project with a staggered delay (1 sec between motors)
-        motorTasks.Add(StartMotorWithDelay(motor, i * 1000));
+            motor.CreateProject(actions);
+            return Results.Ok(new { message = $"Loaded {actions.Count} steps" });
+        }
     }
+    return Results.BadRequest("Invalid Motor ID");
+});
 
-    await Task.WhenAll(motorTasks);
-    Console.WriteLine("All motor projects complete");
-}
-
-// Helper to build a sample action list for each motor
-List<ProjectAction> BuildMotorActions()
-{
-    var loop = new LoopAction(3);
-    loop.AddAction(new ManualAction(100, 10));
-    loop.AddAction(new WaitAction(2));
-    loop.AddAction(new ManualAction(0, 10));
-
-    return new List<ProjectAction>
+// Add this near your other MapPost routes
+app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) => {
+    // Convert "Motor 1" -> Index 0
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
-        new ManualAction(100, 10),
-        new WaitAction(3),
-        loop,
-        new ManualAction(200, 20)
-    };
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count)
+        {
+            var motor = backend.Motors[index];
+            
+            // Fire and Forget: Start the motor task in the background
+            _ = motor.Start(); 
+            
+            return Results.Ok(new { message = $"Motor {motorNum} sequence started." });
+        }
+    }
+    return Results.BadRequest("Invalid Motor ID");
+});
+
+app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) => {
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count) {
+            var motor = backend.Motors[index];
+            // Manual moves shouldn't interrupt a running program, so we check state
+            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
+                _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
+                return Results.Ok();
+            }
+            return Results.Conflict("Motor is busy.");
+        }
+    }
+    return Results.BadRequest("Invalid Motor");
+});
+
+app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count) {
+            var motor = backend.Motors[index];
+            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
+                _ = motor.MoveRelative(req.Distance);
+                return Results.Ok();
+            }
+            return Results.Conflict("Motor is busy.");
+        }
+    }
+    return Results.BadRequest("Invalid Motor");
+});
+
+// Emergency Stop
+app.MapPost("/api/system/abort", (BackendManagement backend) => {
+    backend.EmergencyStopAll();
+    return Results.Ok("All motors halted.");
+});
+
+// IMPORTANT: This starts the server and BLOCKS here. 
+// It won't reach "Application is shutting down" until you hit Ctrl+C.
+app.Run();
+
+// Define the tiny helper class for the request
+public class StartRequest { public string Motor { get; set; } = string.Empty; }
+public class MoveAbsoluteRequest { public string Motor { get; set; } = ""; public float Target { get; set; } }
+public class MoveRelativeRequest { public string Motor { get; set; } = ""; public float Distance { get; set; } }
+
+public partial class Program {
+    public static BackendManagement Backend { get; set; } = null!;
 }
 
-// Helper to start a motor project with a delay
-async Task StartMotorWithDelay(MotorController motor, int delayMilliseconds)
-{
-    await Task.Delay(delayMilliseconds);
-    Console.WriteLine($"Starting Motor {motor.MotorID} project after {delayMilliseconds}ms delay");
-    await motor.Start();
-}

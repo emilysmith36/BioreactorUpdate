@@ -2,6 +2,7 @@ namespace BioreactorControl.Projects;
 
 using System.Diagnostics.Metrics;
 using BioreactorControl.Motors;
+using BioreactorControl.Backend;
 
 /* ---------------- PROJECT DATA ---------------- */
 
@@ -193,18 +194,31 @@ public class CycleBasedAction : ProjectAction
         UseCycles = useCycles;
     }
 
-    // Empty execution for now
+    // Placeholder execution for now
     public override async Task PerformAction(MotorController motor)
     {
-        if (motor.State != MotorState.Running)
+        Console.WriteLine($"Motor {motor.MotorID}: Moving {Displacement}mm at {Rate}mm/s");
+        
+        // Simple simulation: increment position over time
+        float startPos = motor.motorPosition;
+        float endPos = startPos + (Direction == "tension" ? Displacement : -Displacement);
+        
+        // Simulate a 2-second move
+        for (int i = 1; i <= 20; i++) 
         {
-            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping CycleBasedAction.");
-            return;
+            motor.motorPosition = startPos + (endPos - startPos) * (i / 20f);
+
+            // Send the new position to the UI:
+            Program.Backend.PushEvent(new BioreactorEvent {
+                Type = "motor_position",
+                Motor = $"Motor {motor.MotorID + 1}",
+                Position = motor.motorPosition
+            });
+
+            await Task.Delay(100); // 100ms steps
+
         }
+        
 
-        Console.WriteLine($"Motor {motor.MotorID}: Cycle-based action started with {Cycles} cycles.");
-
-        // TODO: Implement actual cycle logic later
-        await Task.CompletedTask;
     }
 }

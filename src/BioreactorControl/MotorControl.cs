@@ -54,8 +54,18 @@ public class MotorController
 
     private void SetState(MotorState newState)
     {
-        State = newState;
-        Console.WriteLine($"Motor {MotorID} State -> {State}");
+        // ONLY act if the state is actually different
+        if (this.State == newState) return;
+
+        this.State = newState;
+        Console.WriteLine($"Motor {MotorID} State -> {newState}");
+
+        // Tell the frontend what's up, yo:
+        Program.Backend.PushEvent(new BioreactorEvent {
+            Type = "motor_state",
+            Motor = $"Motor {MotorID + 1}",
+            State = newState.ToString().ToLower() 
+        });
     }
 
     // 🔹 Placeholder for UI/API project creation
@@ -146,6 +156,38 @@ public class MotorController
             cts.Cancel();
         }
     }
+
+    public async Task MoveAbsolute(float targetPosition)
+    {
+        SetState(MotorState.Running);
+        float startPos = this.motorPosition;
+        float distance = targetPosition - startPos;
+        
+        // Simulate movement over 1 second
+        int steps = 10;
+        for (int i = 1; i <= steps; i++)
+        {
+            this.motorPosition = startPos + (distance * (i / (float)steps));
+            
+            // Push the new position to the UI
+            Program.Backend.PushEvent(new BioreactorEvent {
+                Type = "motor_position",
+                Motor = $"Motor {MotorID + 1}",
+                Position = this.motorPosition
+            });
+            
+            await Task.Delay(100);
+        }
+
+        SetState(MotorState.Idle);
+        Console.WriteLine($"Motor {MotorID} moved to absolute position: {targetPosition}");
+    }
+
+    public async Task MoveRelative(float distance)
+    {
+        await MoveAbsolute(this.motorPosition + distance);
+    }
+
 }
 
 /* ---------------- MOTOR THREAD (ASYNC WORKER) ---------------- */
@@ -176,3 +218,4 @@ public static class MotorThread
         Console.WriteLine($"Motor {motor.MotorID} finished execution");
     }
 }
+

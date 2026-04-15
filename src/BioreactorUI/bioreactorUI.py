@@ -5,6 +5,7 @@ import copy
 import time
 
 from backend_bridge import UiMockBackend
+from backend_bridge import HttpBackendBridge
 
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
@@ -180,7 +181,8 @@ class App(tk.Tk):
         self.programs = {m: [] for m in self.motors}
         self.status_indicators = {m: [] for m in self.motors}
         self.paused = False
-        self.bridge = UiMockBackend(self.motors)
+        #self.bridge = UiMockBackend(self.motors)
+        self.bridge = HttpBackendBridge(self.motors)
 
         root = ttk.Frame(self)
         root.pack(fill="both", expand=True)
@@ -218,19 +220,22 @@ class App(tk.Tk):
 
     def apply_bridge_event(self, event):
         event_type = event["type"]
+        
         if event_type == "log":
             self.add_log(event["message"])
-            return
-        if event_type == "motor_state":
+            
+        elif event_type == "motor_state":
+            # This updates the text in the "Motor Positions" section
             self.set_motor_state(event["motor"], event["state"])
-            return
-        if event_type == "motor_position":
+            # This adds a note to the history log
+            self.add_log(f"[STATUS] {event['motor']} is now {event['state']}")
+            
+        elif event_type == "motor_position":
             self.pos[event["motor"]] = event["position"]
             self.update_motor_label(event["motor"])
-            return
-        if event_type == "motor_step":
+            
+        elif event_type == "motor_step":
             self.set_motor_step(event["motor"], event["step"])
-            return
 
     def refresh_experiment_status_from_state(self):
         if self.paused:
