@@ -189,8 +189,12 @@ public class MotorController
     }
 
     //demo
+    private CancellationTokenSource jogCts;
     public async Task JogStart(float rate, int direction, int motor)
     {
+        jogCts = new CancellationTokenSource();
+        var token = jogCts.Token; 
+
         State = MotorState.Running;
 
         await Task.Run(async () =>
@@ -218,6 +222,7 @@ public class MotorController
     //demo
     public async JogStop()
     {
+        jogCts?.Cancel();
         State = MotorState.Idle;
     }
 
