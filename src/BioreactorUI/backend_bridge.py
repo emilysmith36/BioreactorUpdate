@@ -13,11 +13,13 @@ import json
 
 class HttpBackendBridge:
     def __init__(self, motors, base_url="http://localhost:5000/api"):
+        print("init function hit")
         self.motors = list(motors)
         self.base_url = base_url
         self._cached_status = {} # Store the last known status here
 
     def connect(self):
+        print("connect function hit")
         try:
             # Check if the C# server is awake
             resp = requests.get(f"{self.base_url}/status", timeout=2.0)
@@ -27,6 +29,7 @@ class HttpBackendBridge:
 
     def poll_events(self):
         """One call to rule them all: Fetches events AND motor statuses."""
+        print("poll events hit")
         try:
             # 1. Get Events
             e_resp = requests.get(f"{self.base_url}/events", timeout=0.1)
@@ -44,11 +47,13 @@ class HttpBackendBridge:
             return []
 
     def has_active_run(self, motor):
+        print("has active run hit")
         """Now looks at the cache instead of making a new network request."""
         status = self._cached_status.get(motor, {})
         return status.get("isRunning", False)
 
     def load_program(self, motor, steps):
+        print("load program hit")
         payload = {"motor": motor, "steps": steps}
         try:
             resp = requests.post(f"{self.base_url}/program/load", json=payload, timeout=2.0)
@@ -57,6 +62,7 @@ class HttpBackendBridge:
             return False
 
     def start_program(self, motor):
+        print("start program hit")
         try:
             # You'll need to add a /program/start route in C# if you haven't yet!
             resp = requests.post(f"{self.base_url}/program/start", json={"motor": motor}, timeout=1.0)
@@ -65,13 +71,26 @@ class HttpBackendBridge:
             return False
 
     def jog_start(self, motor, rate, direction):
+        print("jog start hit")
         payload = {"motor": motor, "rate": rate, "direction": direction}
-        requests.post(f"{self.base_url}/jog/start", json=payload, timeout=1.0)
+        try: 
+            resp = requests.post(f"{self.base_url}/jog/start", json=payload, timeout=1.0)
+            return resp.status_code == 200
+        except Exception as e:
+            print("Jog start error", e)
+            return False
 
     def jog_stop(self, motor):
-        requests.post(f"{self.base_url}/jog/stop", json={"motor": motor}, timeout=1.0)
+        print("jog stop hit")
+        try:
+            resp = requests.post(f"{self.base_url}/jog/stop", json={"motor": motor}, timeout=1.0)
+            return resp.status_code == 200
+        except Exception as e:
+            print("Jog start error: ", e)
+            return False
 
     def move_absolute(self, motor, target):
+        print("move absolute hit")
         try:
             resp = requests.post(f"{self.base_url}/motor/move-absolute", 
                                  json={"motor": motor, "target": target}, timeout=1.0)
@@ -80,6 +99,7 @@ class HttpBackendBridge:
             return False
 
     def move_relative(self, motor, distance):
+        print("move relative hit")
         try:
             resp = requests.post(f"{self.base_url}/motor/move-relative", 
                                  json={"motor": motor, "distance": distance}, timeout=1.0)
@@ -88,14 +108,19 @@ class HttpBackendBridge:
             return False
 
     def abort_all(self):
+        print("abort all hit")
         try:
             requests.post(f"{self.base_url}/system/abort", timeout=1.0)
         except:
             pass
 
     # placeholders for UI compatibility:
-    def pause_all(self): requests.post(f"{self.base_url}/system/pause")
-    def resume_all(self): requests.post(f"{self.base_url}/system/resume")
+    def pause_all(self): 
+        print("pause all hit")
+        requests.post(f"{self.base_url}/system/pause")
+    def resume_all(self): 
+        print("resume all hit")
+        requests.post(f"{self.base_url}/system/resume")
 
 class UiMockBackend:
     """Temporary frontend-side stand-in for the real backend connection."""
