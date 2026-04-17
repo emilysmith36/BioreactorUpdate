@@ -206,13 +206,15 @@ public class MotorController
 
                 Backend.PushEvent(new BioreactorEvent
                 {
-                    Type = "jog_start",
+                    Type = "move_absolute",
                     Motor = motorNum.toString(),
                     Message = "Motor jog started",
                     Position = null,
                     State = "running",
                     Step = null,
                 });
+
+                Console.WriteLine("in the jogging function, it is running");
 
                 await Task.Delay(10, token);
             }
