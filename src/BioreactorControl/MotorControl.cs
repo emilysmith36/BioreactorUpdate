@@ -202,7 +202,7 @@ public class MotorController
                 Program.Backend.PushEvent(new BioreactorEvent
                 {
                     Type = "move_absolute",
-                    Motor = motorNum.ToString(),
+                    Motor = motor.ToString(),
                     Message = "Motor jog started",
                     State = "running"
                 });
