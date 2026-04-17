@@ -79,34 +79,43 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
     return Results.BadRequest("Invalid Motor ID");
 });
 
-//app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) => {
-//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
-//        int index = motorNum - 1;
-//        if (index >= 0 && index < backend.Motors.Count) {
-//            var motor = backend.Motors[index];
-//            // Manual moves shouldn't interrupt a running program, so we check state
-//            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
-//                _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
-//                return Results.Ok();
-//            }
-//            return Results.Conflict("Motor is busy.");
-//        }
-//    }
-//    return Results.BadRequest("Invalid Motor");
-//});
-
-app.MapPost("/motor/move-absolute", async (MoveAbsoluteRequest req) =>
+app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) =>
 {
-    int motorIndex = req.Motor - 1;
-    if (motorIndex < 0 || motorIndex >= Program.Backend.Motors.Count)
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
-        return Results.BadRequest("invalid motor index");
-    }
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count)
+        {
+            var motor = backend.Motors[index];
+            // Manual moves shouldn't interrupt a running program, so we check state
+            //if (motor.State == MotorState.Idle || motor.State == MotorState.Ready)
+            //{
+            //    _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
+            //    return Results.Ok();
+            //}
 
-    var motor = Program.Backend.Motors[motorIndex];
-    await motor.MoveAbsolute(req.Target);
-    return Results.Ok();
+            //return Results.Conflict("Motor is busy.");
+
+            var motor = Program.Backend.Motors[motor];
+            await motor.MoveAbsolute(req.Target);
+            return Results.Ok();
+        }
+    }
+    return Results.BadRequest("Invalid Motor");
 });
+
+//app.MapPost("/motor/move-absolute", async (MoveAbsoluteRequest req) =>
+//{
+//    int motorIndex = int(req.Motor) - 1;
+//    if (motorIndex < 0 || motorIndex >= Program.Backend.Motors.Count)
+//    {
+//        return Results.BadRequest("invalid motor index");
+//    }
+
+//    var motor = Program.Backend.Motors[motorIndex];
+//    await motor.MoveAbsolute(req.Target);
+//    return Results.Ok();
+//});
 
 app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
