@@ -199,7 +199,7 @@ public class MotorController
 
         await Task.Run(async () =>
         {
-            while (State == MotorState.Running)
+            while (State == MotorState.Running && !token.IsCancellationRequested())
             {
                 float difference = rate * direction * 0.01f;
                 motorPosition += delta;
@@ -214,7 +214,7 @@ public class MotorController
                     Step = null,
                 });
 
-                await Task.Delay(10);
+                await Task.Delay(10, token);
             }
         });
     }
