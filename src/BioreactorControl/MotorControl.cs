@@ -188,44 +188,37 @@ public class MotorController
         await MoveAbsolute(this.motorPosition + distance);
     }
 
-    //demo
-    private CancellationTokenSource jogCts;
     public async Task JogStart(float rate, int direction, int motor)
     {
-        jogCts = new CancellationTokenSource();
-        var token = jogCts.Token; 
+        SetState(MotorState.Running);
 
-        State = MotorState.Running;
-
-        await Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
-            while (State == MotorState.Running && !token.IsCancellationRequested())
+            while (this.State == MotorState.Running)
             {
                 float difference = rate * direction * 0.01f;
-                motorPosition += delta;
+                this.motorPosition += difference; // Fixed variable name
 
-                Backend.PushEvent(new BioreactorEvent
+                Program.Backend.PushEvent(new BioreactorEvent
                 {
                     Type = "move_absolute",
-                    Motor = motorNum.toString(),
+                    Motor = motor.toString(),
                     Message = "Motor jog started",
-                    Position = null,
-                    State = "running",
-                    Step = null,
+                    State = "running"
                 });
 
                 Console.WriteLine("in the jogging function, it is running");
 
-                await Task.Delay(10, token);
+                await Task.Delay(10);
             }
         });
+        
+        await Task.CompletedTask;
     }
 
-    //demo
-    public async JogStop()
+    public void JogStop() // Removed async since it just flips a state
     {
-        jogCts?.Cancel();
-        State = MotorState.Idle;
+        SetState(MotorState.Idle);
     }
 
 }
