@@ -29,7 +29,6 @@ class HttpBackendBridge:
 
     def poll_events(self):
         """One call to rule them all: Fetches events AND motor statuses."""
-        print("poll events hit")
         try:
             # 1. Get Events
             e_resp = requests.get(f"{self.base_url}/events", timeout=0.1)
@@ -47,7 +46,6 @@ class HttpBackendBridge:
             return []
 
     def has_active_run(self, motor):
-        print("has active run hit")
         """Now looks at the cache instead of making a new network request."""
         status = self._cached_status.get(motor, {})
         return status.get("isRunning", False)
@@ -91,11 +89,14 @@ class HttpBackendBridge:
 
     def move_absolute(self, motor, target):
         print("move absolute hit")
+        print("moveabs motor: ", motor)
+        print("moveabs target: ", target)
         try:
             resp = requests.post(f"{self.base_url}/motor/move-absolute", 
                                  json={"motor": motor, "target": target}, timeout=1.0)
             return resp.status_code == 200
-        except:
+        except Exception as e:
+            print("exception: ", e)
             return False
 
     def move_relative(self, motor, distance):
