@@ -79,21 +79,34 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
     return Results.BadRequest("Invalid Motor ID");
 });
 
-app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) => {
-    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
-        int index = motorNum - 1;
-        if (index >= 0 && index < backend.Motors.Count) {
-            var motor = backend.Motors[index];
-            // Manual moves shouldn't interrupt a running program, so we check state
-            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
-                _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
-                return Results.Ok();
-            }
-            return Results.Conflict("Motor is busy.");
-        }
+//app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) => {
+//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
+//        int index = motorNum - 1;
+//        if (index >= 0 && index < backend.Motors.Count) {
+//            var motor = backend.Motors[index];
+//            // Manual moves shouldn't interrupt a running program, so we check state
+//            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
+//                _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
+//                return Results.Ok();
+//            }
+//            return Results.Conflict("Motor is busy.");
+//        }
+//    }
+//    return Results.BadRequest("Invalid Motor");
+//});
+
+app.MapPost("/motor/move-absolute", async (MoveAbsoluteRequest req) =>
+{
+    int motorIndex = req.Motor - 1;
+    if (motorIndex < 0 || motorIndex >= Program.Backend.Motors.Count)
+    {
+        return Results.BadRequest("invalid motor index");
     }
-    return Results.BadRequest("Invalid Motor");
-});
+
+    var motor = Program.Backend.Motors[motorIndex];
+    await motor.MoveAbsolute(req.Target);
+    return Results.Ok();
+})
 
 app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
@@ -115,6 +128,51 @@ app.MapPost("/api/system/abort", (BackendManagement backend) => {
     backend.EmergencyStopAll();
     return Results.Ok("All motors halted.");
 });
+
+
+//demo jogging
+app.MapPost("/api/jog/start", async (JogRequest req, BackendManagement backend) =>
+{
+    int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
+    int index = motorNum - 1;
+    var motor = backend.Motors[index];
+
+    await JogStart(req.Rate, req.Direction, index);
+
+    backend.PushEvent(new BioreactorEvent
+    {
+        Type = "jog_start",
+        Motor = motorNum.toString(),
+        Message = "Motor jog started",
+        Position = null,
+        State = "running",
+        Step = null,
+    });
+
+    return Results.Ok(new { message = "jog started" });
+});
+
+app.MapPost("api/jog/stop", async (JogRequest req, BackendManagement backend) =>
+{
+    int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
+    int index = motorNum - 1;
+    var motor = backend.Motors[index];
+
+    await JogStop();
+
+    backend.PushEvent(new BioreactorEvent
+    {
+        Type = "jog_stop",
+        Motor = motorNum.toString(),
+        Message = "Motor jog stopped",
+        Position = null,
+        State = "idle",
+        Step = null,
+    });
+
+    return Results.Ok(new { message = "jog stopped" });
+});
+
 
 // IMPORTANT: This starts the server and BLOCKS here. 
 // It won't reach "Application is shutting down" until you hit Ctrl+C.
