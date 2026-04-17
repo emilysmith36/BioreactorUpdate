@@ -106,7 +106,7 @@ app.MapPost("/motor/move-absolute", async (MoveAbsoluteRequest req) =>
     var motor = Program.Backend.Motors[motorIndex];
     await motor.MoveAbsolute(req.Target);
     return Results.Ok();
-})
+});
 
 app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
