@@ -188,6 +188,39 @@ public class MotorController
         await MoveAbsolute(this.motorPosition + distance);
     }
 
+    //demo
+    public async Task JogStart(float rate, int direction, int motor)
+    {
+        State = MotorState.Running;
+
+        await Task.Run(async () =>
+        {
+            while (State == MotorState.Running)
+            {
+                float difference = rate * direction * 0.01f;
+                motorPosition += delta;
+
+                Backend.PushEvent(new BioreactorEvent
+                {
+                    Type = "jog_start",
+                    Motor = motorNum.toString(),
+                    Message = "Motor jog started",
+                    Position = null,
+                    State = "running",
+                    Step = null,
+                });
+
+                await Task.Delay(10);
+            }
+        });
+    }
+
+    //demo
+    public async JogStop()
+    {
+        State = MotorState.Idle;
+    }
+
 }
 
 /* ---------------- MOTOR THREAD (ASYNC WORKER) ---------------- */

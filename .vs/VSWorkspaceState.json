@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\DemoFrontend"
   ],
-  "SelectedNode": "\\DemoFrontend.sln",
+  "SelectedNode": "\\DemoFrontend\\MainWindow.xaml.cs",
   "PreviewInSolutionExplorer": false
 }

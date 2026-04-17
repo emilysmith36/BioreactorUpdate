@@ -1,0 +1,59 @@
+﻿<Window x:Class="DemoFrontend.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DemoFrontend"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <TabControl HorizontalAlignment="Center" Height="434" VerticalAlignment="Center" Width="800">
+            <TabItem Header="Bioreactor Settings">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem Header="Project Settings">
+                <Grid Background="#FFE5E5E5">
+                    <Label Content="Motor 1" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.342,0.002"/>
+                    <TextBox HorizontalAlignment="Left" Height="19" Margin="22,41,0,0" TextWrapping="Wrap" Text="Strain" VerticalAlignment="Top" Width="41" TextChanged="TextBox_TextChanged"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="68,44,0,0" TextWrapping="Wrap" Text="% at " VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="100,42,0,0" TextWrapping="Wrap" Text="Rate" VerticalAlignment="Top" Width="32" TextChanged="TextBox_TextChanged_1" RenderTransformOrigin="-0.649,0.56"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="137,44,0,0" TextWrapping="Wrap" Text="/s for" VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="170,42,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="29" TextChanged="TextBox_TextChanged_2"/>
+                    <ComboBox x:Name="Time2" HorizontalAlignment="Left" Margin="204,41,0,0" VerticalAlignment="Top" Width="68" ItemsSource="{Binding time}"/>
+                    <TextBox HorizontalAlignment="Left" Margin="299,44,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="26" TextChanged="TextBox_TextChanged_3" RenderTransformOrigin="0.385,0.449"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="339,45,0,0" TextWrapping="Wrap" Text="Hz" VerticalAlignment="Top"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="280,45,0,0" TextWrapping="Wrap" Text="at" VerticalAlignment="Top" RenderTransformOrigin="-2.163,0.817" Width="13" Height="15"/>
+
+                    <Label Content="Motor 2" HorizontalAlignment="Left" Margin="10,130,0,0" VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Height="19" Margin="22,160,0,0" TextWrapping="Wrap" Text="Strain" VerticalAlignment="Top" Width="41" TextChanged="TextBox_TextChanged"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="68,160,0,0" TextWrapping="Wrap" Text="% at " VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="100,160,0,0" TextWrapping="Wrap" Text="Rate" VerticalAlignment="Top" Width="32" TextChanged="TextBox_TextChanged_1" RenderTransformOrigin="-0.649,0.56"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="137,160,0,0" TextWrapping="Wrap" Text="/s for" VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="170,160,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="29" TextChanged="TextBox_TextChanged_2"/>
+                    <ComboBox x:Name="Time" HorizontalAlignment="Left" Margin="204,160,0,0" VerticalAlignment="Top" Width="68" ItemsSource="{Binding time}"/>
+                    <TextBox HorizontalAlignment="Left" Margin="299,160,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="26" TextChanged="TextBox_TextChanged_3" RenderTransformOrigin="0.385,0.449"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="339,160,0,0" TextWrapping="Wrap" Text="Hz" VerticalAlignment="Top"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="280,160,0,0" TextWrapping="Wrap" Text="at" VerticalAlignment="Top" RenderTransformOrigin="-2.163,0.817" Width="13" Height="15"/>
+
+
+                    <Label Content="Motor 3" HorizontalAlignment="Left" Margin="10,242,0,0" VerticalAlignment="Top" Height="24" Width="53"/>
+                    <TextBox HorizontalAlignment="Left" Height="19" Margin="22,270,0,0" TextWrapping="Wrap" Text="Strain" VerticalAlignment="Top" Width="41" TextChanged="TextBox_TextChanged"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="68,270,0,0" TextWrapping="Wrap" Text="% at " VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="100,270,0,0" TextWrapping="Wrap" Text="Rate" VerticalAlignment="Top" Width="32" TextChanged="TextBox_TextChanged_1" RenderTransformOrigin="-0.649,0.56"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="137,270,0,0" TextWrapping="Wrap" Text="/s for" VerticalAlignment="Top"/>
+                    <TextBox HorizontalAlignment="Left" Margin="170,270,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="29" TextChanged="TextBox_TextChanged_2"/>
+                    <ComboBox x:Name="Time3" HorizontalAlignment="Left" Margin="204,270,0,0" VerticalAlignment="Top" Width="68" ItemsSource="{Binding time}"/>
+                    <TextBox HorizontalAlignment="Left" Margin="299,270,0,0" TextWrapping="Wrap" Text="X" VerticalAlignment="Top" Width="26" TextChanged="TextBox_TextChanged_3" RenderTransformOrigin="0.385,0.449"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="339,270,0,0" TextWrapping="Wrap" Text="Hz" VerticalAlignment="Top"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="280,270,0,0" TextWrapping="Wrap" Text="at" VerticalAlignment="Top" RenderTransformOrigin="-2.163,0.817" Width="13" Height="15"/>
+
+
+                </Grid>
+            </TabItem>
+            <TabItem Header="History">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+        </TabControl>
+
+    </Grid>
+</Window>
