@@ -19,13 +19,15 @@ class HttpBackendBridge:
     def _get(self, path, timeout):
         try:
             return requests.get(f"{self.base_url}{path}", timeout=timeout)
-        except REQUEST_EXCEPTION:
+        except Exception as e:
+            print("exception: ", e)
             return None
 
     def _post(self, path, payload=None, timeout=1.0):
         try:
             return requests.post(f"{self.base_url}{path}", json=payload, timeout=timeout)
-        except REQUEST_EXCEPTION:
+        except Exception as e:
+            print("exception:", e)
             return None
 
     def connect(self):
@@ -48,6 +50,7 @@ class HttpBackendBridge:
                 data = status_resp.json()
                 self._cached_status = {item["motor"]: item for item in data}
             except ValueError:
+                print("exception: ", ValueError)
                 pass
 
         return events
@@ -59,8 +62,12 @@ class HttpBackendBridge:
     def load_program(self, motor, steps):
         print("load program hit")
         payload = {"motor": motor, "steps": steps}
-        resp = self._post("/program/load", payload=payload, timeout=2.0)
-        return bool(resp and resp.status_code == 200)
+        try:
+            resp = self._post("/program/load", payload=payload, timeout=2.0)
+            return bool(resp and resp.status_code == 200)
+        except Exception as e:
+            print("exception: ", e)
+            return None
 
     def start_program(self, motor):
         print("start program hit")
@@ -69,22 +76,38 @@ class HttpBackendBridge:
 
     def jog_start(self, motor, rate, direction):
         print("jog start hit")
-        payload = {"motor": motor, "rate": rate, "direction": direction}
-        self._post("/jog/start", payload=payload, timeout=1.0)
+        try:
+            payload = {"motor": motor, "rate": rate, "direction": direction}
+            self._post("/jog/start", payload=payload, timeout=1.0)
+        except Exception as e:
+            print("exception: ", e)
+            return None
 
     def jog_stop(self, motor):
         print("jog stop hit")
-        self._post("/jog/stop", payload={"motor": motor}, timeout=1.0)
+        try:
+            self._post("/jog/stop", payload={"motor": motor}, timeout=1.0)
+        except Exception as e:
+            print("exception: ", e)
+            return None
 
     def move_absolute(self, motor, target):
         print("move_absolute hit")
-        resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
-        return bool(resp and resp.status_code == 200)
+        try: 
+            resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
+            return bool(resp and resp.status_code == 200)
+        except Exception as e:
+            print("exception: ", e)
+            return None
 
     def move_relative(self, motor, distance):
         print("move relative hit")
-        resp = self._post("/motor/move-relative", payload={"motor": motor, "distance": distance}, timeout=1.0)
-        return bool(resp and resp.status_code == 200)
+        try:
+            resp = self._post("/motor/move-relative", payload={"motor": motor, "distance": distance}, timeout=1.0)
+            return bool(resp and resp.status_code == 200)
+        except Exception as e:
+            print("exception: ", e)
+            return None
 
     def abort_all(self):
         self._post("/system/abort", timeout=1.0)
