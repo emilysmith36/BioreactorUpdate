@@ -92,14 +92,14 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
 
 ////PYTHON ATTEMPTS
 
-//app.MapPost("/api/motor/move-absolute", async (
-//    MoveAbsoluteRequest req,
-//    PythonMotorClient python) =>
-//{
-//    return Results.Ok(new { message = "accessing move-absolute backend" });
-//    //await python.MoveAbsolute(req.Motor, req.Target);
-//    //return Results.Ok();
-//});
+app.MapPost("/api/motor/move-absolute", async (
+    MoveAbsoluteRequest req,
+    PythonMotorClient python) =>
+{
+    return Results.Ok(new { message = "accessing move-absolute backend" });
+    //await python.MoveAbsolute(req.Motor, req.Target);
+    //return Results.Ok();
+});
 
 //app.MapPost("/api/motor/move-relative", async (
 //    MoveRelativeRequest req,
@@ -248,13 +248,6 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
 // It won't reach "Application is shutting down" until you hit Ctrl+C.
 app.Run();
 
-
-
-app.MapPost("/api/test", () =>
-{
-    Console.WriteLine("[C#] TEST ENDPOINT HIT");
-    return Results.Ok(new { message = "test works" });
-});
 
 // Define the tiny helper class for the request
 public class StartRequest { public string Motor { get; set; } = string.Empty; }
