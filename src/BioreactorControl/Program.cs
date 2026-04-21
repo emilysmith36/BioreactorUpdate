@@ -9,7 +9,7 @@ using BioreactorControl.Projects;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.SetMinimumLevel(LogLevel.Information); // Reduces logging  noise (was printing every position update)
+builder.Logging.SetMinimumLevel(LogLevel.Warning); // Reduces logging  noise (was printing every position update)
 
 // Add the backend as a "Singleton" so every API call talks to the SAME motors
 builder.Services.AddSingleton<BackendManagement>();
@@ -33,7 +33,6 @@ app.MapGet("/api/status", () => Results.Ok("Backend is running"));
 // Get status for a SPECIFIC motor (Fixes the 404 error)
 app.MapGet("/api/status/all", (BackendManagement backend) =>
 {
-    Console.WriteLine("status backend");
     return Results.Ok(backend.Motors.Select(m => new
     {
         motor = $"Motor {m.MotorID + 1}",
@@ -50,7 +49,6 @@ app.MapGet("/api/events", (BackendManagement backend) =>
 // Load Program
 app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) =>
 {
-    Console.WriteLine("program load backend");
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
         int index = motorNum - 1;
@@ -72,7 +70,6 @@ app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement back
 // Add this near your other MapPost routes
 app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) =>
 {
-    Console.WriteLine("program start backend");
     // Convert "Motor 1" -> Index 0
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
