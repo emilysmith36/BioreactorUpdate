@@ -28,6 +28,7 @@ class HttpBackendBridge:
             return requests.post(f"{self.base_url}{path}", json=payload, timeout=timeout)
         except Exception as e:
             print("post exception:", e)
+            print(f"url: {self.base_url} path: {path} ")
             return None
 
     def connect(self):
