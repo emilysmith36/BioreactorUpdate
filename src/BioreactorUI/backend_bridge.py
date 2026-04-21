@@ -95,7 +95,7 @@ class HttpBackendBridge:
     def move_absolute(self, motor, target):
         print("move_absolute hit")
         try: 
-            resp = self._post("/api/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
+            resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
             print("move abs exception: ", e)
