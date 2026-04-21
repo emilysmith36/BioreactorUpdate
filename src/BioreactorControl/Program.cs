@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
-//using PythonMotorClient;
-//using Python.Runtime;
+
 
 
 
@@ -106,7 +105,7 @@ app.MapPost("/api/jog/start", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
-    await python.Jog(req.Motor);
+    await python.JogStart(req.Motor);
     return Results.Ok();
 });
 
