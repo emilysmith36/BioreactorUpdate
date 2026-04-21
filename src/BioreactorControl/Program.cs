@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
-using PythonMotorClient;
+//using PythonMotorClient;
 //using Python.Runtime;
 
 
