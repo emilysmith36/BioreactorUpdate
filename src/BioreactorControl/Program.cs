@@ -9,7 +9,7 @@ using BioreactorControl.Projects;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.SetMinimumLevel(LogLevel.Warning); // Reduces logging  noise (was printing every position update)
+builder.Logging.SetMinimumLevel(LogLevel.Information); // Reduces logging  noise (was printing every position update)
 
 // Add the backend as a "Singleton" so every API call talks to the SAME motors
 builder.Services.AddSingleton<BackendManagement>();
