@@ -27,7 +27,7 @@ class HttpBackendBridge:
         try:
             return requests.post(f"{self.base_url}{path}", json=payload, timeout=timeout)
         except Exception as e:
-            print("exception:", e)
+            print("post exception:", e)
             return None
 
     def connect(self):
@@ -50,7 +50,7 @@ class HttpBackendBridge:
                 data = status_resp.json()
                 self._cached_status = {item["motor"]: item for item in data}
             except ValueError:
-                print("exception: ", ValueError)
+                print("poll events exception: ", ValueError)
                 pass
 
         return events
@@ -66,7 +66,7 @@ class HttpBackendBridge:
             resp = self._post("/program/load", payload=payload, timeout=2.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
-            print("exception: ", e)
+            print("load program exception: ", e)
             return None
 
     def start_program(self, motor):
@@ -80,7 +80,7 @@ class HttpBackendBridge:
             payload = {"motor": motor, "rate": rate, "direction": direction}
             self._post("/jog/start", payload=payload, timeout=1.0)
         except Exception as e:
-            print("exception: ", e)
+            print("jog start exception: ", e)
             return None
 
     def jog_stop(self, motor):
@@ -88,7 +88,7 @@ class HttpBackendBridge:
         try:
             self._post("/jog/stop", payload={"motor": motor}, timeout=1.0)
         except Exception as e:
-            print("exception: ", e)
+            print("jog stop exception: ", e)
             return None
 
     def move_absolute(self, motor, target):
@@ -97,7 +97,7 @@ class HttpBackendBridge:
             resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
-            print("exception: ", e)
+            print("move abs exception: ", e)
             return None
 
     def move_relative(self, motor, distance):
@@ -106,7 +106,7 @@ class HttpBackendBridge:
             resp = self._post("/motor/move-relative", payload={"motor": motor, "distance": distance}, timeout=1.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
-            print("exception: ", e)
+            print("move rel exception: ", e)
             return None
 
     def abort_all(self):
