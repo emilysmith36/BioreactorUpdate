@@ -20,7 +20,7 @@ class HttpBackendBridge:
         try:
             return requests.get(f"{self.base_url}{path}", timeout=timeout)
         except Exception as e:
-            print("exception: ", e)
+            # print("exception: ", e)
             return None
 
     def _post(self, path, payload=None, timeout=1.0):
