@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\otter\\BioreactorUpdate\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\motorcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\motorcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\backenddemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\backenddemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\motorcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\motorcontrol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\projectdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\projectdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|c:\\users\\otter\\bioreactorupdate\\src\\bioreactorcontrol\\backenddemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{100BFBA1-A7DF-3D5D-9AD9-C66B46E2B4F2}|src\\BioreactorControl\\BioreactorControl.csproj|solutionrelative:src\\bioreactorcontrol\\backenddemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,24 +30,36 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "src\\BioreactorControl\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Properties\\launchSettings.json",
+              "RelativeToolTip": "src\\BioreactorControl\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-04-17T18:28:01.148Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "MotorControl.cs",
               "DocumentMoniker": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\MotorControl.cs",
               "RelativeDocumentMoniker": "src\\BioreactorControl\\MotorControl.cs",
               "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\MotorControl.cs",
               "RelativeToolTip": "src\\BioreactorControl\\MotorControl.cs",
-              "ViewState": "AgIAAEUAAAAAAAAAAAAmwMAAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALcAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-17T06:02:07.914Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "ProjectData.cs",
               "DocumentMoniker": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\ProjectData.cs",
               "RelativeDocumentMoniker": "src\\BioreactorControl\\ProjectData.cs",
@@ -51,34 +67,32 @@
               "RelativeToolTip": "src\\BioreactorControl\\ProjectData.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T06:01:57.452Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T06:01:57.452Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Program.cs",
               "RelativeDocumentMoniker": "src\\BioreactorControl\\Program.cs",
-              "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Program.cs",
-              "RelativeToolTip": "src\\BioreactorControl\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAZAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Program.cs*",
+              "RelativeToolTip": "src\\BioreactorControl\\Program.cs*",
+              "ViewState": "AgIAAFIAAAAAAAAAAIAwwF4AAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-17T04:27:34.47Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "BackendDemo.cs",
               "DocumentMoniker": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\BackendDemo.cs",
               "RelativeDocumentMoniker": "src\\BioreactorControl\\BackendDemo.cs",
               "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\BackendDemo.cs",
               "RelativeToolTip": "src\\BioreactorControl\\BackendDemo.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAswCIAAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T04:18:56.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T04:18:56.219Z"
             }
           ]
         }

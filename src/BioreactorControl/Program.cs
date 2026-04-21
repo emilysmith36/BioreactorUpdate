@@ -96,8 +96,12 @@ app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendM
 
             //return Results.Conflict("Motor is busy.");
 
-            var motor = Program.Backend.Motors[motor];
-            await motor.MoveAbsolute(req.Target);
+            await pythonClient.PostAsJsonAsync("/motor/move-absolute", new
+            {
+                steps = 200,
+                freq = 20,
+                direction = 1
+            });
             return Results.Ok();
         }
     }
@@ -140,47 +144,47 @@ app.MapPost("/api/system/abort", (BackendManagement backend) => {
 
 
 //demo jogging
-app.MapPost("/api/jog/start", async (JogRequest req, BackendManagement backend) =>
-{
-    int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
-    int index = motorNum - 1;
-    var motor = backend.Motors[index];
+//app.MapPost("/api/jog/start", async (JogRequest req, BackendManagement backend) =>
+//{
+//    var motor1 = int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
+//    int index = motorNum - 1;
+//    var motor = backend.Motors[index];
 
-    await JogStart(req.Rate, req.Direction, index);
+//    await JogStart(req.Rate, req.Direction, index);
 
-    backend.PushEvent(new BioreactorEvent
-    {
-        Type = "jog_start",
-        Motor = motorNum.toString(),
-        Message = "Motor jog started",
-        Position = null,
-        State = "running",
-        Step = null,
-    });
+//    backend.PushEvent(new BioreactorEvent
+//    {
+//        Type = "jog_start",
+//        Motor = motorNum.toString(),
+//        Message = "Motor jog started",
+//        Position = null,
+//        State = "running",
+//        Step = null,
+//    });
 
-    return Results.Ok(new { message = "jog started" });
-});
+//    return Results.Ok(new { message = "jog started" });
+//});
 
-app.MapPost("api/jog/stop", async (JogRequest req, BackendManagement backend) =>
-{
-    int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
-    int index = motorNum - 1;
-    var motor = backend.Motors[index];
+//app.MapPost("api/jog/stop", async (JogRequest req, BackendManagement backend) =>
+//{
+//    int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum);
+//    int index = motorNum - 1;
+//    var motor = backend.Motors[index];
 
-    await JogStop();
+//    await JogStop();
 
-    backend.PushEvent(new BioreactorEvent
-    {
-        Type = "jog_stop",
-        Motor = motorNum.toString(),
-        Message = "Motor jog stopped",
-        Position = null,
-        State = "idle",
-        Step = null,
-    });
+//    backend.PushEvent(new BioreactorEvent
+//    {
+//        Type = "jog_stop",
+//        Motor = motorNum.toString(),
+//        Message = "Motor jog stopped",
+//        Position = null,
+//        State = "idle",
+//        Step = null,
+//    });
 
-    return Results.Ok(new { message = "jog stopped" });
-});
+//    return Results.Ok(new { message = "jog stopped" });
+//});
 
 
 // IMPORTANT: This starts the server and BLOCKS here. 

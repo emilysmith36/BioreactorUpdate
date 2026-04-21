@@ -42,8 +42,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-17T18:28:01.148Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T18:28:01.148Z"
             },
             {
               "$type": "Document",
@@ -53,7 +52,7 @@
               "RelativeDocumentMoniker": "src\\BioreactorControl\\MotorControl.cs",
               "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\MotorControl.cs",
               "RelativeToolTip": "src\\BioreactorControl\\MotorControl.cs",
-              "ViewState": "AgIAAJsAAAAAAAAAAAAwwLcAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALcAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-17T06:02:07.914Z",
               "EditorCaption": ""
@@ -68,8 +67,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\ProjectData.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T06:01:57.452Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T06:01:57.452Z"
             },
             {
               "$type": "Document",
@@ -79,7 +77,7 @@
               "RelativeDocumentMoniker": "src\\BioreactorControl\\Program.cs",
               "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\Program.cs",
               "RelativeToolTip": "src\\BioreactorControl\\Program.cs",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAuwGAAAAA4AAAAAAAAAA==",
+              "ViewState": "AgIAAK8AAAAAAAAAAAAswLsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-17T04:27:34.47Z",
               "EditorCaption": ""
@@ -94,8 +92,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\BackendDemo.cs",
               "ViewState": "AgIAAAUAAAAAAAAAAAAswCIAAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T04:18:56.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T04:18:56.219Z"
             }
           ]
         }
