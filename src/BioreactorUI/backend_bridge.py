@@ -63,6 +63,7 @@ class HttpBackendBridge:
         return bool(resp and resp.status_code == 200)
 
     def start_program(self, motor):
+        print("start program hit")
         resp = self._post("/program/start", payload={"motor": motor}, timeout=1.0)
         return bool(resp and resp.status_code == 200)
 
@@ -72,13 +73,16 @@ class HttpBackendBridge:
         self._post("/jog/start", payload=payload, timeout=1.0)
 
     def jog_stop(self, motor):
+        print("jog stop hit")
         self._post("/jog/stop", payload={"motor": motor}, timeout=1.0)
 
     def move_absolute(self, motor, target):
+        print("move_absolute hit")
         resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
         return bool(resp and resp.status_code == 200)
 
     def move_relative(self, motor, distance):
+        print("move relative hit")
         resp = self._post("/motor/move-relative", payload={"motor": motor, "distance": distance}, timeout=1.0)
         return bool(resp and resp.status_code == 200)
 
