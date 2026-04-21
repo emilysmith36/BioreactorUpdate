@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
+using Python.Runtime;
 
 
 
@@ -12,6 +13,9 @@ builder.Logging.SetMinimumLevel(LogLevel.Warning); // Reduces logging  noise (wa
 
 // Add the backend as a "Singleton" so every API call talks to the SAME motors
 builder.Services.AddSingleton<BackendManagement>();
+
+//adding python client as singleton
+builder.Services.AddSingleton<PythonMotorClient>();
 
 var app = builder.Build();
 
@@ -79,34 +83,75 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
     return Results.BadRequest("Invalid Motor ID");
 });
 
-app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) =>
+//python attempts
+
+app.MapPost("/api/motor/move-absolute", async (
+    MoveAbsoluteRequest req,
+    PythonMotorClient python) =>
 {
-    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
-    {
-        int index = motorNum - 1;
-        if (index >= 0 && index < backend.Motors.Count)
-        {
-            var motor = backend.Motors[index];
-            // Manual moves shouldn't interrupt a running program, so we check state
-            //if (motor.State == MotorState.Idle || motor.State == MotorState.Ready)
-            //{
-            //    _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
-            //    return Results.Ok();
-            //}
-
-            //return Results.Conflict("Motor is busy.");
-
-            await pythonClient.PostAsJsonAsync("/motor/move-absolute", new
-            {
-                steps = 200,
-                freq = 20,
-                direction = 1
-            });
-            return Results.Ok();
-        }
-    }
-    return Results.BadRequest("Invalid Motor");
+    await python.MoveAbsolute(req.Motor, req.Target);
+    return Results.Ok();
 });
+
+app.MapPost("/api/motor/move-relative", async (
+    MoveRelativeRequest req,
+    PythonMotorClient python) =>
+{
+    await python.MoveRelative(req.Motor, req.Distance);
+    return Results.Ok();
+});
+
+app.MapPost("/api/jog/start", async (
+    JogRequest req,
+    PythonMotorClient python) =>
+{
+    await python.Jog(req.Motor);
+    return Results.Ok();
+});
+
+app.MapPost("/api/jog/stop", async (
+    JogRequest req,
+    PythonMotorClient python) =>
+{
+    await python.JogStop(req.Motor);
+    return Results.Ok();
+});
+
+app.MapPost("/api/system/abort", async (
+    PythonMotorClient python) =>
+{
+    await python.StopAll();
+    return Results.Ok();
+});
+
+//app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) =>
+//{
+//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
+//    {
+//        int index = motorNum - 1;
+//        if (index >= 0 && index < backend.Motors.Count)
+//        {
+//            var motor = backend.Motors[index];
+//            // Manual moves shouldn't interrupt a running program, so we check state
+//            //if (motor.State == MotorState.Idle || motor.State == MotorState.Ready)
+//            //{
+//            //    _ = motor.MoveAbsolute(req.Target); // Fire and forget in background
+//            //    return Results.Ok();
+//            //}
+
+//            //return Results.Conflict("Motor is busy.");
+
+//            await pythonClient.PostAsJsonAsync("/motor/move-absolute", new
+//            {
+//                steps = 200,
+//                freq = 20,
+//                direction = 1
+//            });
+//            return Results.Ok();
+//        }
+//    }
+//    return Results.BadRequest("Invalid Motor");
+//});
 
 //app.MapPost("/motor/move-absolute", async (MoveAbsoluteRequest req) =>
 //{
@@ -121,20 +166,20 @@ app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendM
 //    return Results.Ok();
 //});
 
-app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
-    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
-        int index = motorNum - 1;
-        if (index >= 0 && index < backend.Motors.Count) {
-            var motor = backend.Motors[index];
-            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
-                _ = motor.MoveRelative(req.Distance);
-                return Results.Ok();
-            }
-            return Results.Conflict("Motor is busy.");
-        }
-    }
-    return Results.BadRequest("Invalid Motor");
-});
+//app.MapPost("/api/motor/move-relative", (MoveRelativeRequest req, BackendManagement backend) => {
+//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum)) {
+//        int index = motorNum - 1;
+//        if (index >= 0 && index < backend.Motors.Count) {
+//            var motor = backend.Motors[index];
+//            if (motor.State == MotorState.Idle || motor.State == MotorState.Ready) {
+//                _ = motor.MoveRelative(req.Distance);
+//                return Results.Ok();
+//            }
+//            return Results.Conflict("Motor is busy.");
+//        }
+//    }
+//    return Results.BadRequest("Invalid Motor");
+//});
 
 // Emergency Stop
 app.MapPost("/api/system/abort", (BackendManagement backend) => {
