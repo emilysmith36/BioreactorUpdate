@@ -93,9 +93,9 @@ app.MapPost("/api/motor/move-absolute", async (
     MoveAbsoluteRequest req,
     PythonMotorClient python) =>
 {
-    return Results.Ok(new { message = "accessing move-absolute backend" });
-    //await python.MoveAbsolute(req.Motor, req.Target);
-    //return Results.Ok();
+    Console.WriteLine("motor move abs backend");
+    await python.MoveAbsolute(req.Motor, req.Target);
+    return Results.Ok();
 });
 
 //app.MapPost("/api/motor/move-relative", async (
