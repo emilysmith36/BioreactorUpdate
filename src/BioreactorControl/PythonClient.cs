@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 public class PythonMotorClient
 {
     private readonly HttpClient _http = new HttpClient();
-    private readonly string _baseUrl = "http://localhost:5000/api";
+    private readonly string _baseUrl = "http://localhost:8000/api";
 
     public async Task MoveAbsolute(string motor, float target)
     {

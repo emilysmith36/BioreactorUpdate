@@ -83,7 +83,7 @@ def move_relative(data:dict):
 def jog_start(data: dict):
     print("inside jog start in control")
     freq_hz = float(data["frequency"])
-    direction_val = int(data["direction"])
+    direction_val = "up" if freq_hz >= 0 else "down"
 
     stop_event.clear()
     Thread(target=jog, args=(freq_hz, direction_val)).start()
