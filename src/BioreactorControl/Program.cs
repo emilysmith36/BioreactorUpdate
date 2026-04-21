@@ -32,6 +32,7 @@ app.MapGet("/api/status", () => Results.Ok("Backend is running"));
 
 // Get status for a SPECIFIC motor (Fixes the 404 error)
 app.MapGet("/api/status/all", (BackendManagement backend) => {
+    Console.WriteLine("status backend");
     return Results.Ok(backend.Motors.Select(m => new {
         motor = $"Motor {m.MotorID + 1}",
         isRunning = m.State == MotorState.Running,
@@ -46,6 +47,7 @@ app.MapGet("/api/events", (BackendManagement backend) =>
 
 // Load Program
 app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) => {
+    Console.WriteLine("program load backend");
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
         int index = motorNum - 1;
@@ -66,6 +68,7 @@ app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement back
 
 // Add this near your other MapPost routes
 app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) => {
+    Console.WriteLine("program start backend");
     // Convert "Motor 1" -> Index 0
     if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
     {
@@ -89,6 +92,7 @@ app.MapPost("/api/motor/move-absolute", async (
     MoveAbsoluteRequest req,
     PythonMotorClient python) =>
 {
+    Console.WriteLine("move absolute backend");
     await python.MoveAbsolute(req.Motor, req.Target);
     return Results.Ok();
 });
@@ -97,6 +101,7 @@ app.MapPost("/api/motor/move-relative", async (
     MoveRelativeRequest req,
     PythonMotorClient python) =>
 {
+    Console.WriteLine("move relative backend");
     await python.MoveRelative(req.Motor, req.Distance);
     return Results.Ok();
 });
@@ -105,6 +110,7 @@ app.MapPost("/api/jog/start", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
+    Console.WriteLine("jog start backend");
     await python.JogStart(req.Motor, req.Rate, req.Direction);
     return Results.Ok();
 });
@@ -113,6 +119,7 @@ app.MapPost("/api/jog/stop", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
+    Console.WriteLine("job stop backend");
     await python.JogStop(req.Motor);
     return Results.Ok();
 });
@@ -120,6 +127,7 @@ app.MapPost("/api/jog/stop", async (
 app.MapPost("/api/system/abort", async (
     PythonMotorClient python) =>
 {
+    Console.WriteLine("abort backend");
     await python.StopAll();
     return Results.Ok();
 });
