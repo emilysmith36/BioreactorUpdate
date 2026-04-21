@@ -92,44 +92,44 @@ app.MapPost("/api/motor/move-absolute", async (
     MoveAbsoluteRequest req,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("move absolute backend");
-    await python.MoveAbsolute(req.Motor, req.Target);
-    return Results.Ok();
+    return Results.Ok(new { message = "accessing move-absolute backend" });
+    //await python.MoveAbsolute(req.Motor, req.Target);
+    //return Results.Ok();
 });
 
 app.MapPost("/api/motor/move-relative", async (
     MoveRelativeRequest req,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("move relative backend");
-    await python.MoveRelative(req.Motor, req.Distance);
-    return Results.Ok();
+    return Results.Ok(new { message = "accessing move-relative" });
+    //await python.MoveRelative(req.Motor, req.Distance);
+    //return Results.Ok();
 });
 
 app.MapPost("/api/jog/start", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("jog start backend");
-    await python.JogStart(req.Motor, req.Rate, req.Direction);
-    return Results.Ok();
+    return Results.Ok(new { message = "accesing jog start" });
+    //await python.JogStart(req.Motor, req.Rate, req.Direction);
+    //return Results.Ok();
 });
 
 app.MapPost("/api/jog/stop", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("job stop backend");
-    await python.JogStop(req.Motor);
-    return Results.Ok();
+    return Results.Ok(new { message = "accessing job stop" });
+    //await python.JogStop(req.Motor);
+    //return Results.Ok();
 });
 
 app.MapPost("/api/system/abort", async (
     PythonMotorClient python) =>
 {
-    Console.WriteLine("abort backend");
-    await python.StopAll();
-    return Results.Ok();
+    return Results.Ok(new { message = "accessing abort" });
+    //await python.StopAll();
+    //return Results.Ok();
 });
 
 //app.MapPost("/api/motor/move-absolute", async (MoveAbsoluteRequest req, BackendManagement backend) =>
