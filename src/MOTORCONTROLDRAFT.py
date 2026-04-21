@@ -60,26 +60,26 @@ def jog(freq_hz, direction_val):
 
 #api routes
 
-@app.post("/motor/move-absolute")
+@app.post("/api/motor/move-absolute")
 def move_absolute(data:dict):
     print("inside move_absolute in control")
     target = float(data["target"])
-    steps = int(target * x) #needs calibration, how many mm is each step
+    steps = int(target / 0.003048) #needs calibration, how many mm is each step
 
     Thread(target=move_steps, args=(steps, 20, 1)).start()
     return {"status": "moving"}
 
-@app.post("/motor/move-relative")
+@app.post("/api/motor/move-relative")
 def move_relative(data:dict):
     print("inside move relative in control")
     distance = float(data["distance"])
-    steps = int(distance * x) #needs calibration
+    steps = int(distance / 0.003048) #needs calibration
     direction_val = "up" if steps >= 0 else "down"
 
     Thread(target=move_steps, args=(steps, 20, direction_val)).start()
     return {"status": "moving"}
 
-@app.post("motor/jog-start")
+@app.post("/api/motor/jog-start")
 def jog_start(data: dict):
     print("inside jog start in control")
     freq_hz = float(data["frequency"])
@@ -89,13 +89,13 @@ def jog_start(data: dict):
     Thread(target=jog, args=(freq_hz, direction_val)).start()
     return {"status": "jogging"}
 
-@app.post("/motor/jog-stop")
+@app.post("/api/motor/jog-stop")
 def jog_stop(data: dict):
     print("inside jog stop in control")
     stop_event.set()
     return {"status": "stopped"}
 
-@app.post("/motor/stop")
+@app.post("/api/motor/stop")
 def stop_all():
     print("inside stop all in control")
     stop_event.set()
