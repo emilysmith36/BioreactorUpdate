@@ -47,46 +47,48 @@ app.MapGet("/api/status/all", (BackendManagement backend) =>
 app.MapGet("/api/events", (BackendManagement backend) =>
     Results.Ok(backend.DequeueEvents()));
 
-//// Load Program
-//app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) => {
-//    Console.WriteLine("program load backend");
-//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
-//    {
-//        int index = motorNum - 1;
-//        if (index >= 0 && index < backend.Motors.Count)
-//        {
-//            var motor = backend.Motors[index];
-//            var actions = req.Steps.Select(s => new CycleBasedAction(
-//                s.direction, s.rate, s.frequency_hz, s.displacement_mm, 
-//                s.duration_seconds, s.cycles, s.timing_mode == "cycles"
-//            )).Cast<ProjectAction>().ToList();
+// Load Program
+app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) =>
+{
+    Console.WriteLine("program load backend");
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
+    {
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count)
+        {
+            var motor = backend.Motors[index];
+            var actions = req.Steps.Select(s => new CycleBasedAction(
+                s.direction, s.rate, s.frequency_hz, s.displacement_mm,
+                s.duration_seconds, s.cycles, s.timing_mode == "cycles"
+            )).Cast<ProjectAction>().ToList();
 
-//            motor.CreateProject(actions);
-//            return Results.Ok(new { message = $"Loaded {actions.Count} steps" });
-//        }
-//    }
-//    return Results.BadRequest("Invalid Motor ID");
-//});
+            motor.CreateProject(actions);
+            return Results.Ok(new { message = $"Loaded {actions.Count} steps" });
+        }
+    }
+    return Results.BadRequest("Invalid Motor ID");
+});
 
-//// Add this near your other MapPost routes
-//app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) => {
-//    Console.WriteLine("program start backend");
-//    // Convert "Motor 1" -> Index 0
-//    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
-//    {
-//        int index = motorNum - 1;
-//        if (index >= 0 && index < backend.Motors.Count)
-//        {
-//            var motor = backend.Motors[index];
+// Add this near your other MapPost routes
+app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) =>
+{
+    Console.WriteLine("program start backend");
+    // Convert "Motor 1" -> Index 0
+    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
+    {
+        int index = motorNum - 1;
+        if (index >= 0 && index < backend.Motors.Count)
+        {
+            var motor = backend.Motors[index];
 
-//            // Fire and Forget: Start the motor task in the background
-//            _ = motor.Start(); 
+            // Fire and Forget: Start the motor task in the background
+            _ = motor.Start();
 
-//            return Results.Ok(new { message = $"Motor {motorNum} sequence started." });
-//        }
-//    }
-//    return Results.BadRequest("Invalid Motor ID");
-//});
+            return Results.Ok(new { message = $"Motor {motorNum} sequence started." });
+        }
+    }
+    return Results.BadRequest("Invalid Motor ID");
+});
 
 ////PYTHON ATTEMPTS
 
