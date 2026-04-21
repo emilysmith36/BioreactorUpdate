@@ -25,25 +25,27 @@ Program.Backend = backendInstance;
 
 await Program.Backend.Initialize();
 
-//// --- API ROUTES ---
+// --- API ROUTES ---
 
-//// Global health check
-//app.MapGet("/api/status", () => Results.Ok("Backend is running"));
+// Global health check
+app.MapGet("/api/status", () => Results.Ok("Backend is running"));
 
-//// Get status for a SPECIFIC motor (Fixes the 404 error)
-//app.MapGet("/api/status/all", (BackendManagement backend) => {
-//    Console.WriteLine("status backend");
-//    return Results.Ok(backend.Motors.Select(m => new {
-//        motor = $"Motor {m.MotorID + 1}",
-//        isRunning = m.State == MotorState.Running,
-//        position = m.motorPosition,
-//        state = m.State.ToString()
-//    }));
-//});
+// Get status for a SPECIFIC motor (Fixes the 404 error)
+app.MapGet("/api/status/all", (BackendManagement backend) =>
+{
+    Console.WriteLine("status backend");
+    return Results.Ok(backend.Motors.Select(m => new
+    {
+        motor = $"Motor {m.MotorID + 1}",
+        isRunning = m.State == MotorState.Running,
+        position = m.motorPosition,
+        state = m.State.ToString()
+    }));
+});
 
-//// Event polling for logs and position updates
-//app.MapGet("/api/events", (BackendManagement backend) => 
-//    Results.Ok(backend.DequeueEvents()));
+// Event polling for logs and position updates
+app.MapGet("/api/events", (BackendManagement backend) =>
+    Results.Ok(backend.DequeueEvents()));
 
 //// Load Program
 //app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) => {
