@@ -9,7 +9,7 @@ import requests
 
 REQUEST_EXCEPTION = requests.RequestException
 
-requests.post("http://localhost:62287/api/test")
+requests.post("https://localhost:62287/api/test", verify=False)
 
 class HttpBackendBridge:
     def __init__(self, motors, base_url="http://localhost:62287/api"):
