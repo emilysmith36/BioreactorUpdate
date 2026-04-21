@@ -105,7 +105,7 @@ app.MapPost("/api/jog/start", async (
     JogRequest req,
     PythonMotorClient python) =>
 {
-    await python.JogStart(req.Motor);
+    await python.JogStart(req.Motor, req.Rate, req.Direction);
     return Results.Ok();
 });
 
