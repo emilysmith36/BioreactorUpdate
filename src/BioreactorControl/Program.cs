@@ -244,9 +244,9 @@ app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) 
 ////});
 
 
-//// IMPORTANT: This starts the server and BLOCKS here. 
-//// It won't reach "Application is shutting down" until you hit Ctrl+C.
-//app.Run();
+// IMPORTANT: This starts the server and BLOCKS here. 
+// It won't reach "Application is shutting down" until you hit Ctrl+C.
+app.Run();
 
 
 
