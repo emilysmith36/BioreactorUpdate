@@ -37,6 +37,6 @@ public class PythonMotorClient
 
     public async Task StopAll()
     {
-        await _http.PostAsync($"{_baseUrl}/motor/stop", null);
+        await _http.PostAsync($"{_baseUrl}/system/abort", null);
     }
 }

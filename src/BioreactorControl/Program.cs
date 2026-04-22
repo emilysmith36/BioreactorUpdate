@@ -110,9 +110,13 @@ app.MapPost("api/motor/move-relative", async (
 
 
 // Emergency Stop
-app.MapPost("/api/system/abort", (BackendManagement backend) =>
+app.MapPost("/api/system/abort", async (
+    BackendManagement backend,
+    PythonMotorClient python
+    ) =>
 {
     backend.EmergencyStopAll();
+    await python.StopAll();
     return Results.Ok("All motors halted.");
 });
 

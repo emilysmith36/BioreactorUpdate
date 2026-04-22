@@ -96,7 +96,7 @@ def jog_stop(data: dict):
     stop_event.set()
     return {"status": "stopped"}
 
-@app.post("/api/motor/stop")
+@app.post("/api/system/abort")
 def stop_all():
     print("inside stop all in control")
     stop_event.set()
