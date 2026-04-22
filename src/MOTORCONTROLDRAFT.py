@@ -19,7 +19,7 @@ def move_steps(steps, freq_hz, direction_val):
     print("getting into move_steps")
     half_period = 1 / (2 * freq_hz)
 
-    if (direction_val == "up"):
+    if (direction_val == 1):
         direction.on()
     else:
         direction.off()
@@ -74,6 +74,7 @@ def move_relative(data:dict):
     print("inside move relative in control")
     distance = float(data["distance"])
     steps = int(distance / 0.003048) #needs calibration
+    print("steps")
     direction_val = "up" if steps >= 0 else "down"
 
     Thread(target=move_steps, args=(steps, 20, direction_val)).start()
