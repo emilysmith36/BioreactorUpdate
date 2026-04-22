@@ -9,8 +9,10 @@ public class PythonMotorClient
 
     public async Task MoveAbsolute(string motor, float target)
     {
-        Console.WriteLine("move absolute in python client: ", _baseUrl, "/motor/move-absolute");
-        sleep(1);
+        Console.WriteLine("move absolute in python client: ");
+        Console.WriteLine(_baseUrl + "/motor/move-absolute");
+
+
         await _http.PostAsJsonAsync($"{_baseUrl}/motor/move-absolute",
             new { motor, target });
     }
