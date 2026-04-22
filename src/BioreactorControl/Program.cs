@@ -109,11 +109,12 @@ app.MapPost("api/motor/move-relative", async (
 
 
 
-//// Emergency Stop
-//app.MapPost("/api/system/abort", (BackendManagement backend) => {
-//    backend.EmergencyStopAll();
-//    return Results.Ok("All motors halted.");
-//});
+// Emergency Stop
+app.MapPost("/api/system/abort", (BackendManagement backend) =>
+{
+    backend.EmergencyStopAll();
+    return Results.Ok("All motors halted.");
+});
 
 
 
