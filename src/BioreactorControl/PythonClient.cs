@@ -12,13 +12,13 @@ public class PythonMotorClient
         Console.WriteLine("move absolute in python client: ");
         Console.WriteLine(_baseUrl + "/motor/move-absolute");
 
-
         await _http.PostAsJsonAsync($"{_baseUrl}/motor/move-absolute",
             new { motor, target });
     }
 
     public async Task MoveRelative(string motor, float distance)
     {
+        Console.WriteLine("move relative in python client");
         await _http.PostAsJsonAsync($"{_baseUrl}/motor/move-relative",
             new { motor, distance });
     }
