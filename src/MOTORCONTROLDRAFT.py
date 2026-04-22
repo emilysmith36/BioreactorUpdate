@@ -19,7 +19,7 @@ def move_steps(steps, freq_hz, direction_val):
     print("getting into move_steps")
     half_period = 1 / (2 * freq_hz)
 
-    if (direction_val):
+    if (direction_val == "up"):
         direction.on()
     else:
         direction.off()
@@ -42,7 +42,7 @@ def jog(freq_hz, direction_val):
     print("getting into jog")
     half_period = 1 / (2 * freq_hz)
     
-    if direction_val > 0:
+    if direction_val == "up":
         direction.on()
     else:
         direction.off()
