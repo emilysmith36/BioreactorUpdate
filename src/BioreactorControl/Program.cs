@@ -115,6 +115,7 @@ app.MapPost("/api/system/abort", async (
     PythonMotorClient python
     ) =>
 {
+    Console.WriteLine("stopping in backend");
     backend.EmergencyStopAll();
     await python.StopAll();
     return Results.Ok("All motors halted.");

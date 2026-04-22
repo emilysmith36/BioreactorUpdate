@@ -37,6 +37,7 @@ public class PythonMotorClient
 
     public async Task StopAll()
     {
+        Console.WriteLine("stopping in python client");
         await _http.PostAsync($"{_baseUrl}/system/abort", null);
     }
 }
