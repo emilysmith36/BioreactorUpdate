@@ -19,7 +19,7 @@ def move_steps(steps, freq_hz, direction_val):
     print("getting into move_steps")
     half_period = 1 / (2 * freq_hz)
 
-    if (direction_val >0):
+    if (direction_val):
         direction.on()
     else:
         direction.off()
