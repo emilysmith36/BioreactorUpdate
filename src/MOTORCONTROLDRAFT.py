@@ -98,6 +98,10 @@ def jog_stop(data: dict):
 
 @app.post("/api/system/abort")
 def stop_all():
+    step.off()
+    direction.off()
+    enable.on()
+    
     print("inside stop all in control")
     stop_event.set()
     return {"status": "stopped"}
