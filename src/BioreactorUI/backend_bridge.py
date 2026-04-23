@@ -58,7 +58,7 @@ class HttpBackendBridge:
 
     def has_active_run(self, motor):
         status = self._cached_status.get(motor, {})
-        return status.get("isRunning", False)
+        return status.get("isBusy", status.get("isRunning", False))
 
     def load_program(self, motor, steps):
         print("load program hit")

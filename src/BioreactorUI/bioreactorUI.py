@@ -355,7 +355,7 @@ class App(tk.Tk):
             self.add_log("[WARN] Cannot move while paused")
             return False
         if self.bridge.has_active_run(motor):
-            self.add_log(f"[WARN] {motor} is executing a program")
+            self.add_log(f"[WARN] {motor} is busy with another motion")
             return False
         if self.state[motor] == "jogging":
             self.add_log(f"[WARN] {motor} is already jogging")
@@ -754,7 +754,7 @@ class App(tk.Tk):
         started = 0
         for motor in motors:
             if self.has_active_run(motor):
-                self.add_log(f"[WARN] {motor} is already executing a program")
+                self.add_log(f"[WARN] {motor} already has active motion")
                 continue
 
             steps = self.programs[motor]

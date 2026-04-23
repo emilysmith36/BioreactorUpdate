@@ -4,40 +4,52 @@ using System.Threading.Tasks;
 
 public class PythonMotorClient
 {
-    private readonly HttpClient _http = new HttpClient();
-    private readonly string _baseUrl = "http://localhost:8000/api";
+    private readonly HttpClient http = new();
+    private readonly string baseUrl = "http://localhost:8000/api";
 
-    public async Task MoveAbsolute(string motor, float target)
+    public Task MoveAbsolute(string motor, float target)
     {
-        Console.WriteLine("move absolute in python client: ");
-        Console.WriteLine(_baseUrl + "/motor/move-absolute");
-
-        await _http.PostAsJsonAsync($"{_baseUrl}/motor/move-absolute",
-            new { motor, target });
+        return PostAndEnsureAsync("/motor/move-absolute", new { motor, target });
     }
 
-    public async Task MoveRelative(string motor, float distance)
+    public Task MoveRelative(string motor, float distance)
     {
-        Console.WriteLine("move relative in python client");
-        await _http.PostAsJsonAsync($"{_baseUrl}/motor/move-relative",
-            new { motor, distance });
+        return PostAndEnsureAsync("/motor/move-relative", new { motor, distance });
     }
 
-    public async Task JogStart(string motor, float rate, string direction)
+    public Task JogStart(string motor, float rate, string direction)
     {
-        await _http.PostAsJsonAsync($"{_baseUrl}/motor/jog-start",
-            new { motor, rate, direction });
+        var normalizedDirection = direction switch
+        {
+            "-1" => "down",
+            "1" => "up",
+            _ => direction.ToLowerInvariant()
+        };
+
+        return PostAndEnsureAsync("/motor/jog-start", new
+        {
+            motor,
+            rate,
+            direction = normalizedDirection
+        });
     }
 
-    public async Task JogStop(string motor)
+    public Task JogStop(string motor)
     {
-        await _http.PostAsJsonAsync($"{_baseUrl}/motor/jog-stop",
-            new { motor });
+        return PostAndEnsureAsync("/motor/jog-stop", new { motor });
     }
 
-    public async Task StopAll()
+    public Task StopAll()
     {
-        Console.WriteLine("stopping in python client");
-        await _http.PostAsync($"{_baseUrl}/system/abort", null);
+        return PostAndEnsureAsync("/system/abort", null);
+    }
+
+    private async Task PostAndEnsureAsync(string path, object? payload)
+    {
+        HttpResponseMessage response = payload is null
+            ? await http.PostAsync($"{baseUrl}{path}", null)
+            : await http.PostAsJsonAsync($"{baseUrl}{path}", payload);
+
+        response.EnsureSuccessStatusCode();
     }
 }

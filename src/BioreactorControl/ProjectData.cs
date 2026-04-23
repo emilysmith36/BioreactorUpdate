@@ -1,10 +1,6 @@
 namespace BioreactorControl.Projects;
 
-using System.Diagnostics.Metrics;
 using BioreactorControl.Motors;
-using BioreactorControl.Backend;
-
-/* ---------------- PROJECT DATA ---------------- */
 
 public class ProjectData
 {
@@ -16,18 +12,13 @@ public class ProjectData
     {
         reactorSettings = reactor;
         projectID = 1;
-        actionList = new List<ProjectAction>(); // empty list, to be filled externally
+        actionList = new List<ProjectAction>();
     }
 }
-
-
-
-/* ---------------- REACTOR SETTINGS ---------------- */
 
 public class ReactorSettings
 {
     public int reactorConnectionID { get; set; }
-
     public int numberOfMotors { get; set; }
 
     public ReactorSettings(int id, int motors)
@@ -37,10 +28,6 @@ public class ReactorSettings
     }
 }
 
-
-/* Project ACtions: */
-
-/* ---------------- BASE ACTION ---------------- */
 public abstract class ProjectAction
 {
     public string ActionType { get; set; }
@@ -50,80 +37,59 @@ public abstract class ProjectAction
         ActionType = type;
     }
 
-    // PerformAction now accepts MotorController for state & cancellation
-    public virtual async Task PerformAction(MotorController motor)
-    {
-        if (motor.State != MotorState.Running)
-        {
-            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping {ActionType}.");
-            return;
-        }
+    public virtual string Describe() => ActionType;
 
-        Console.WriteLine($"Motor {motor.MotorID}: Performing {ActionType} (base)");
-        await Task.Delay(500); // placeholder
+    public virtual async Task PerformAction(MotorController motor, CancellationToken token)
+    {
+        await motor.HoldPositionAsync(0.5f, token);
     }
 }
 
-/* ---------------- MANUAL ACTION ---------------- */
 public class ManualAction : ProjectAction
 {
     public int Position { get; set; }
     public int Rate { get; set; }
 
-    public ManualAction(int position, int rate) 
+    public ManualAction(int position, int rate)
         : base("Manual Action")
     {
         Position = position;
         Rate = rate;
     }
 
-    public override async Task PerformAction(MotorController motor)
-    {
-        if (motor.State != MotorState.Running)
-        {
-            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping ManualAction.");
-            return;
-        }
+    public override string Describe() => $"manual move to {Position} mm at {Rate} mm/s";
 
-        Console.WriteLine($"Motor {motor.MotorID}: Moving to {Position} at rate {Rate}");
-        await Task.Delay(1000); // simulate motion
-        motor.motorPosition = Position;
+    public override Task PerformAction(MotorController motor, CancellationToken token)
+    {
+        return motor.RunInterpolatedMoveAsync(Position, Rate, token);
     }
 }
 
-/* ---------------- WAIT ACTION ---------------- */
 public class WaitAction : ProjectAction
 {
     public int WaitSeconds { get; set; }
 
-    public WaitAction(int seconds) 
+    public WaitAction(int seconds)
         : base("Wait Action")
     {
         WaitSeconds = seconds;
     }
 
-    public override async Task PerformAction(MotorController motor)
-    {
-        if (motor.State != MotorState.Running)
-        {
-            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping WaitAction.");
-            return;
-        }
+    public override string Describe() => $"wait {WaitSeconds} second(s)";
 
-        Console.WriteLine($"Motor {motor.MotorID}: Waiting for {WaitSeconds} seconds");
-        await Task.Delay(WaitSeconds * 1000);
-        Console.WriteLine($"Motor {motor.MotorID}: Finished waiting");
+    public override Task PerformAction(MotorController motor, CancellationToken token)
+    {
+        return motor.HoldPositionAsync(WaitSeconds, token);
     }
 }
 
-/* ---------------- LOOP ACTION ---------------- */
 public class LoopAction : ProjectAction
 {
     private readonly List<ProjectAction> loopActions = new();
 
     public int LoopCount { get; set; }
 
-    public LoopAction(int count) 
+    public LoopAction(int count)
         : base("Loop Action")
     {
         LoopCount = count;
@@ -133,92 +99,130 @@ public class LoopAction : ProjectAction
     public void RemoveAction(ProjectAction action) => loopActions.Remove(action);
     public IReadOnlyList<ProjectAction> GetActions() => loopActions.AsReadOnly();
 
-    public override async Task PerformAction(MotorController motor)
+    public override string Describe() => $"loop {LoopCount} time(s)";
+
+    public override async Task PerformAction(MotorController motor, CancellationToken token)
     {
-        if (motor.State != MotorState.Running)
-        {
-            Console.WriteLine($"Motor {motor.MotorID} is not running. Skipping LoopAction.");
-            return;
-        }
-
-        Console.WriteLine($"Motor {motor.MotorID}: Starting loop ({LoopCount} iterations)");
-
         for (int i = 0; i < LoopCount; i++)
         {
-            Console.WriteLine($"Motor {motor.MotorID}: Loop iteration {i + 1}");
             foreach (var action in loopActions)
             {
-                if (motor.State != MotorState.Running)
-                {
-                    Console.WriteLine($"Motor {motor.MotorID}: Loop stopped early due to state {motor.State}");
-                    return;
-                }
-
-                await action.PerformAction(motor);
+                token.ThrowIfCancellationRequested();
+                await action.PerformAction(motor, token);
             }
         }
-
-        Console.WriteLine($"Motor {motor.MotorID}: Finished loop");
     }
 }
 
-/* ---------------- CYCLE-BASED ACTION ---------------- */
 public class CycleBasedAction : ProjectAction
 {
-    // Data:
-    public string Direction { get; set; } 
-    public float Rate { get; set; }  // per second? Per minute? Per Hour? --> needs clarification
-    public float Frequency { get; set; } // in Hz
-    public float Displacement { get; set; } // in mm
-    public float Duration { get; set; } // in minutes
+    public string Direction { get; set; }
+    public float Rate { get; set; }
+    public float Frequency { get; set; }
+    public float Displacement { get; set; }
+    public float DurationSeconds { get; set; }
+    public float EstimatedSeconds { get; set; }
     public int Cycles { get; set; }
     public bool UseCycles { get; set; }
+    public float TargetPositionMm { get; set; }
+    public string Label { get; set; }
 
-    // Constructor
     public CycleBasedAction(
         string direction,
         float rate,
         float frequency,
         float displacement,
-        float duration,
+        float durationSeconds,
+        float estimatedSeconds,
         int cycles,
-        bool useCycles
-    ) : base("Cycle-Based Action")
+        bool useCycles,
+        float targetPositionMm,
+        string label)
+        : base("Cycle-Based Action")
     {
         Direction = direction;
         Rate = rate;
         Frequency = frequency;
         Displacement = displacement;
-        Duration = duration;
+        DurationSeconds = durationSeconds;
+        EstimatedSeconds = estimatedSeconds;
         Cycles = cycles;
         UseCycles = useCycles;
+        TargetPositionMm = targetPositionMm;
+        Label = label;
     }
 
-    // Placeholder execution for now
-    public override async Task PerformAction(MotorController motor)
+    public override string Describe()
     {
-        Console.WriteLine($"Motor {motor.MotorID}: Moving {Displacement}mm at {Rate}mm/s");
-        
-        // Simple simulation: increment position over time
-        float startPos = motor.motorPosition;
-        float endPos = startPos + (Direction == "tension" ? Displacement : -Displacement);
-        
-        // Simulate a 2-second move
-        for (int i = 1; i <= 20; i++) 
+        return string.IsNullOrWhiteSpace(Label)
+            ? $"{Direction} displacement={Displacement:0.###} mm"
+            : Label;
+    }
+
+    public override async Task PerformAction(MotorController motor, CancellationToken token)
+    {
+        var baseline = motor.motorPosition;
+        var target = TargetPositionMm != 0
+            ? baseline + TargetPositionMm
+            : baseline + (Direction.Equals("compression", StringComparison.OrdinalIgnoreCase) ? -Math.Abs(Displacement) : Math.Abs(Displacement));
+
+        var seconds = ResolveTotalDurationSeconds();
+        var cycleCount = ResolveCycleCount(seconds);
+
+        if (cycleCount <= 1)
         {
-            motor.motorPosition = startPos + (endPos - startPos) * (i / 20f);
-
-            // Send the new position to the UI:
-            Program.Backend.PushEvent(new BioreactorEvent {
-                Type = "motor_position",
-                Motor = $"Motor {motor.MotorID + 1}",
-                Position = motor.motorPosition
-            });
-
-            await Task.Delay(100); // 100ms steps
-
+            await motor.RunInterpolatedMoveAsync(target, Rate, token, seconds > 0 ? seconds : null);
+            return;
         }
-        
 
+        var secondsPerCycle = Math.Max(0.2f, seconds / cycleCount);
+        var halfCycleSeconds = secondsPerCycle / 2f;
+
+        for (int cycleIndex = 0; cycleIndex < cycleCount; cycleIndex++)
+        {
+            token.ThrowIfCancellationRequested();
+            await motor.RunInterpolatedMoveAsync(target, Rate, token, halfCycleSeconds);
+            await motor.RunInterpolatedMoveAsync(baseline, Rate, token, halfCycleSeconds);
+        }
+    }
+
+    private float ResolveTotalDurationSeconds()
+    {
+        if (EstimatedSeconds > 0)
+        {
+            return EstimatedSeconds;
+        }
+
+        if (DurationSeconds > 0)
+        {
+            return DurationSeconds;
+        }
+
+        if (UseCycles && Cycles > 0 && Frequency > 0)
+        {
+            return Cycles / Frequency;
+        }
+
+        if (Math.Abs(Displacement) > 0 && Rate > 0)
+        {
+            return Math.Max(0.2f, Math.Abs(Displacement) / Rate);
+        }
+
+        return 0.5f;
+    }
+
+    private int ResolveCycleCount(float totalSeconds)
+    {
+        if (UseCycles && Cycles > 0)
+        {
+            return Cycles;
+        }
+
+        if (Frequency > 0 && totalSeconds > 0)
+        {
+            return Math.Max(1, (int)Math.Round(totalSeconds * Frequency));
+        }
+
+        return 1;
     }
 }

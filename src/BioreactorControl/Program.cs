@@ -1,141 +1,278 @@
-﻿using BioreactorControl.Backend;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+using BioreactorControl.Backend;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
-
-
-
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.SetMinimumLevel(LogLevel.Warning); // Reduces logging  noise (was printing every position update)
-
-// Add the backend as a "Singleton" so every API call talks to the SAME motors
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services.AddSingleton<BackendManagement>();
-
-//adding python client as singleton
 builder.Services.AddSingleton<PythonMotorClient>();
 
 var app = builder.Build();
 
-// 1. Initialize the hardware/motors once at startup
 var backendInstance = app.Services.GetRequiredService<BackendManagement>();
 Program.Backend = backendInstance;
-
 await Program.Backend.Initialize();
 
-// --- API ROUTES ---
-
-// Global health check
 app.MapGet("/api/status", () => Results.Ok("Backend is running"));
 
-// Get status for a SPECIFIC motor (Fixes the 404 error)
 app.MapGet("/api/status/all", (BackendManagement backend) =>
-{
-    return Results.Ok(backend.Motors.Select(m => new
+    Results.Ok(backend.Motors.Select(m => new
     {
-        motor = $"Motor {m.MotorID + 1}",
+        motor = m.MotorName,
         isRunning = m.State == MotorState.Running,
+        isBusy = m.IsBusy,
         position = m.motorPosition,
-        state = m.State.ToString()
-    }));
-});
+        state = m.State.ToString().ToLowerInvariant(),
+        step = m.CurrentStep
+    })));
 
-// Event polling for logs and position updates
 app.MapGet("/api/events", (BackendManagement backend) =>
     Results.Ok(backend.DequeueEvents()));
 
-// Load Program
 app.MapPost("/api/program/load", (ProgramLoadRequest req, BackendManagement backend) =>
 {
-    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
     {
-        int index = motorNum - 1;
-        if (index >= 0 && index < backend.Motors.Count)
-        {
-            var motor = backend.Motors[index];
-            var actions = req.Steps.Select(s => new CycleBasedAction(
-                s.direction, s.rate, s.frequency_hz, s.displacement_mm,
-                s.duration_seconds, s.cycles, s.timing_mode == "cycles"
-            )).Cast<ProjectAction>().ToList();
-
-            motor.CreateProject(actions);
-            return Results.Ok(new { message = $"Loaded {actions.Count} steps" });
-        }
+        return Results.BadRequest("Invalid Motor ID");
     }
-    return Results.BadRequest("Invalid Motor ID");
+
+    var actions = req.Steps.Select(step => new CycleBasedAction(
+        step.direction,
+        step.rate,
+        step.frequency_hz,
+        step.displacement_mm,
+        step.duration_seconds,
+        step.estimated_seconds,
+        step.cycles,
+        step.timing_mode == "cycles",
+        step.target_position_mm,
+        step.label)).Cast<ProjectAction>().ToList();
+
+    motor.CreateProject(actions);
+    return Results.Ok(new { message = $"Loaded {actions.Count} steps" });
 });
 
-// Add this near your other MapPost routes
 app.MapPost("/api/program/start", (StartRequest req, BackendManagement backend) =>
 {
-    // Convert "Motor 1" -> Index 0
-    if (int.TryParse(req.Motor.Replace("Motor ", ""), out int motorNum))
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
     {
-        int index = motorNum - 1;
-        if (index >= 0 && index < backend.Motors.Count)
-        {
-            var motor = backend.Motors[index];
-
-            // Fire and Forget: Start the motor task in the background
-            _ = motor.Start();
-
-            return Results.Ok(new { message = $"Motor {motorNum} sequence started." });
-        }
+        return Results.BadRequest("Invalid Motor ID");
     }
-    return Results.BadRequest("Invalid Motor ID");
+
+    if (motor.IsBusy)
+    {
+        return Results.Conflict($"{motor.MotorName} is already busy");
+    }
+
+    if (!motor.HasLoadedProject)
+    {
+        return Results.Conflict($"{motor.MotorName} has no loaded project");
+    }
+
+    _ = motor.Start();
+    return Results.Ok(new { message = $"{motor.MotorName} sequence started." });
 });
 
-////PYTHON ATTEMPTS
+app.MapPost("/api/jog/start", async (
+    JogRequest req,
+    BackendManagement backend,
+    PythonMotorClient python) =>
+{
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
+    {
+        return Results.BadRequest("Invalid Motor ID");
+    }
+
+    if (motor.IsBusy)
+    {
+        return Results.Conflict($"{motor.MotorName} is already busy");
+    }
+
+    try
+    {
+        await python.JogStart(req.Motor, req.Rate, req.Direction);
+        await motor.JogStart(req.Rate, ParseDirection(req.Direction));
+        return Results.Ok();
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Jog start failed: {ex.Message}");
+    }
+});
+
+app.MapPost("/api/jog/stop", async (
+    JogStopRequest req,
+    BackendManagement backend,
+    PythonMotorClient python) =>
+{
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
+    {
+        return Results.BadRequest("Invalid Motor ID");
+    }
+
+    motor.JogStop();
+
+    try
+    {
+        await python.JogStop(req.Motor);
+        return Results.Ok();
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Jog stop failed: {ex.Message}");
+    }
+});
 
 app.MapPost("/api/motor/move-absolute", async (
     MoveAbsoluteRequest req,
+    BackendManagement backend,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("motor move abs backend");
-    await python.MoveAbsolute(req.Motor, req.Target);
-    return Results.Ok();
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
+    {
+        return Results.BadRequest("Invalid Motor ID");
+    }
+
+    if (motor.IsBusy)
+    {
+        return Results.Conflict($"{motor.MotorName} is already busy");
+    }
+
+    try
+    {
+        await python.MoveAbsolute(req.Motor, req.Target);
+        _ = motor.MoveAbsolute(req.Target);
+        return Results.Ok();
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Move absolute failed: {ex.Message}");
+    }
 });
 
-app.MapPost("api/motor/move-relative", async (
+app.MapPost("/api/motor/move-relative", async (
     MoveRelativeRequest req,
+    BackendManagement backend,
     PythonMotorClient python) =>
 {
-    Console.WriteLine("motor move relative backend");
-    await python.MoveRelative(req.Motor, req.Distance);
-    return Results.Ok();
+    if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
+    {
+        return Results.BadRequest("Invalid Motor ID");
+    }
+
+    if (motor.IsBusy)
+    {
+        return Results.Conflict($"{motor.MotorName} is already busy");
+    }
+
+    try
+    {
+        await python.MoveRelative(req.Motor, req.Distance);
+        _ = motor.MoveRelative(req.Distance);
+        return Results.Ok();
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Move relative failed: {ex.Message}");
+    }
 });
 
+app.MapPost("/api/system/pause", async (
+    BackendManagement backend,
+    PythonMotorClient python) =>
+{
+    backend.PauseAll();
 
+    try
+    {
+        await python.StopAll();
+        return Results.Ok("All active motion paused where possible.");
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Pause failed: {ex.Message}");
+    }
+});
 
-// Emergency Stop
+app.MapPost("/api/system/resume", async (
+    BackendManagement backend,
+    PythonMotorClient python) =>
+{
+    var jogCommands = backend.ResumeAll();
+
+    try
+    {
+        foreach (var command in jogCommands)
+        {
+            await python.JogStart(command.Motor, command.Rate, command.Direction);
+        }
+
+        return Results.Ok("Paused motion resumed.");
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Resume failed: {ex.Message}");
+    }
+});
+
 app.MapPost("/api/system/abort", async (
     BackendManagement backend,
-    PythonMotorClient python
-    ) =>
+    PythonMotorClient python) =>
 {
-    Console.WriteLine("stopping in backend");
     backend.EmergencyStopAll();
-    await python.StopAll();
-    return Results.Ok("All motors halted.");
+
+    try
+    {
+        await python.StopAll();
+        return Results.Ok("All motors halted.");
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Problem($"Abort failed: {ex.Message}");
+    }
 });
 
-
-
-
-
-// IMPORTANT: This starts the server and BLOCKS here. 
-// It won't reach "Application is shutting down" until you hit Ctrl+C.
 app.Run();
 
-
-// Define the tiny helper class for the request
-public class StartRequest { public string Motor { get; set; } = string.Empty; }
-public class MoveAbsoluteRequest { public string Motor { get; set; } = ""; public float Target { get; set; } }
-public class MoveRelativeRequest { public string Motor { get; set; } = ""; public float Distance { get; set; } }
-
-public partial class Program {
-    public static BackendManagement Backend { get; set; } = null!;
+static int ParseDirection(string direction)
+{
+    var normalized = direction.Trim().ToLowerInvariant();
+    return normalized switch
+    {
+        "-1" => -1,
+        "down" => -1,
+        "reverse" => -1,
+        "compression" => -1,
+        _ => 1
+    };
 }
 
+public class StartRequest
+{
+    public string Motor { get; set; } = string.Empty;
+}
+
+public class JogStopRequest
+{
+    public string Motor { get; set; } = string.Empty;
+}
+
+public class MoveAbsoluteRequest
+{
+    public string Motor { get; set; } = string.Empty;
+    public float Target { get; set; }
+}
+
+public class MoveRelativeRequest
+{
+    public string Motor { get; set; } = string.Empty;
+    public float Distance { get; set; }
+}
+
+public partial class Program
+{
+    public static BackendManagement Backend { get; set; } = null!;
+}
