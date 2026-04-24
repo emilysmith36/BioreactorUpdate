@@ -205,7 +205,9 @@ class App(tk.Tk):
 
         self.show("control")
         self.bridge.connect()
+        self.connection_text = tk.StringVar(value="Backend: connecting…")
         self.after(50, self.process_bridge_events)
+        self.after(250, self.refresh_connection_status)
 
     def show(self, name):
         for p in self.pages.values():
@@ -217,6 +219,23 @@ class App(tk.Tk):
             self.apply_bridge_event(event)
         self.refresh_experiment_status_from_state()
         self.after(50, self.process_bridge_events)
+
+    def refresh_connection_status(self):
+        ok = bool(getattr(self.bridge, "backend_ok", False))
+        last_ok = getattr(self.bridge, "last_backend_ok_time", None)
+        if not ok:
+            if last_ok is None:
+                self.connection_text.set("Backend: disconnected (no successful update yet)")
+            else:
+                age = max(0.0, time.time() - float(last_ok))
+                self.connection_text.set(f"Backend: disconnected (last ok {age:.1f}s ago)")
+        else:
+            if last_ok is None:
+                self.connection_text.set("Backend: connected")
+            else:
+                age = max(0.0, time.time() - float(last_ok))
+                self.connection_text.set(f"Backend: connected (updated {age:.1f}s ago)")
+        self.after(250, self.refresh_connection_status)
 
     def apply_bridge_event(self, event):
         event_type = event["type"]
@@ -561,6 +580,7 @@ class App(tk.Tk):
         frame = ttk.Frame(parent)
         ttk.Label(frame, text="History", font=("Segoe UI", 14, "bold")).pack(anchor="w", pady=(0, 6))
         self.build_motor_status_strip(frame)
+        ttk.Label(frame, textvariable=self.connection_text, foreground="#555555").pack(anchor="w", pady=(0, 6))
         self.history_log = scrolledtext.ScrolledText(frame, state="disabled", wrap="word")
         self.history_log.pack(fill="both", expand=True)
 

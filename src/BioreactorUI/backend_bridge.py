@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import copy
+import os
 import queue
 import threading
 import time
@@ -10,11 +11,20 @@ import requests
 REQUEST_EXCEPTION = requests.RequestException
 
 class HttpBackendBridge:
-    def __init__(self, motors, base_url="http://localhost:62288/api"):
+    def __init__(self, motors, base_url=None):
         print("init function hit")
         self.motors = list(motors)
-        self.base_url = base_url
+        # Default to the Pi-friendly backend URL (Kestrel on 5000) but allow override via env.
+        self.base_url = (
+            base_url
+            or os.environ.get("BIOREACTOR_BACKEND_URL")
+            or "http://127.0.0.1:5000/api"
+        )
         self._cached_status = {}
+        # Used to reconcile UI state when event polling drops updates.
+        self._last_status_snapshot = {}
+        self.last_backend_ok_time = None
+        self.backend_ok = False
 
     def _get(self, path, timeout):
         try:
@@ -33,10 +43,17 @@ class HttpBackendBridge:
 
     def connect(self):
         resp = self._get("/status", timeout=2.0)
-        return bool(resp and resp.status_code == 200)
+        ok = bool(resp and resp.status_code == 200)
+        self.backend_ok = ok
+        if ok:
+            self.last_backend_ok_time = time.time()
+        return ok
 
     def poll_events(self):
         events = []
+        # Track which motors received which event types this cycle to avoid
+        # duplicating updates when we synthesize from /status/all.
+        seen_event_types = set()
 
         events_resp = self._get("/events", timeout=0.1)
         if events_resp and events_resp.status_code == 200:
@@ -45,14 +62,43 @@ class HttpBackendBridge:
             except ValueError:
                 events = []
 
+        for ev in events:
+            try:
+                seen_event_types.add((ev.get("motor"), ev.get("type")))
+            except Exception:
+                pass
+
         status_resp = self._get("/status/all", timeout=0.1)
         if status_resp and status_resp.status_code == 200:
             try:
                 data = status_resp.json()
+                self.backend_ok = True
+                self.last_backend_ok_time = time.time()
                 self._cached_status = {item["motor"]: item for item in data}
+                # Reconcile: synthesize motor_state/motor_position/motor_step updates
+                # from authoritative status polling when event delivery is lossy.
+                for motor, item in self._cached_status.items():
+                    prev = self._last_status_snapshot.get(motor, {})
+                    # Position
+                    pos = item.get("position")
+                    if pos is not None and prev.get("position") != pos and (motor, "motor_position") not in seen_event_types:
+                        events.append({"type": "motor_position", "motor": motor, "position": pos})
+                    # State
+                    state = item.get("state")
+                    if state and prev.get("state") != state and (motor, "motor_state") not in seen_event_types:
+                        events.append({"type": "motor_state", "motor": motor, "state": state})
+                    # Step
+                    step = item.get("step")
+                    if step and prev.get("step") != step and (motor, "motor_step") not in seen_event_types:
+                        events.append({"type": "motor_step", "motor": motor, "step": step})
+
+                    self._last_status_snapshot[motor] = {"position": pos, "state": state, "step": step}
             except ValueError:
                 print("poll events exception: ", ValueError)
                 pass
+        else:
+            # If we can't read status, consider the backend unhealthy until it recovers.
+            self.backend_ok = False
 
         return events
 
@@ -78,7 +124,8 @@ class HttpBackendBridge:
     def jog_start(self, motor, rate, direction):
         print("jog start hit")
         try:
-            payload = {"motor": motor, "rate": rate, "direction": direction}
+            # Backend expects Direction as a string (C# model binding).
+            payload = {"motor": motor, "rate": rate, "direction": str(direction)}
             self._post("/jog/start", payload=payload, timeout=1.0)
         except Exception as e:
             print("jog start exception: ", e)

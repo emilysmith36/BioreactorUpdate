@@ -5,6 +5,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import os
 from pathlib import Path
 
 
@@ -12,7 +13,9 @@ ROOT = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT / "BioreactorControl"
 UI_DIR = ROOT / "BioreactorUI"
 
-BACKEND_HEALTH_URL = "http://127.0.0.1:5000/api/status"
+BACKEND_BASE_URL = "http://127.0.0.1:5000"
+BACKEND_HEALTH_URL = f"{BACKEND_BASE_URL}/api/status"
+BACKEND_API_BASE_URL = f"{BACKEND_BASE_URL}/api"
 MOTORCONTROL_HOST = "127.0.0.1"
 MOTORCONTROL_PORT = 8000
 
@@ -29,6 +32,9 @@ def start_process(name, command, cwd):
     process = subprocess.Popen(
         command,
         cwd=str(cwd),
+        env=dict(
+            **os.environ,
+        ),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -82,11 +88,20 @@ def main():
 
     try:
         print("Starting backend...")
-        backend = start_process(
-            "backend",
+        # Force a known backend URL so the UI/diagnostics behave the same on Windows and the Pi.
+        backend_env = dict(os.environ)
+        backend_env["ASPNETCORE_URLS"] = BACKEND_BASE_URL
+
+        backend = subprocess.Popen(
             ["dotnet", "run"],
-            BACKEND_DIR,
+            cwd=str(BACKEND_DIR),
+            env=backend_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
         )
+        threading.Thread(target=stream_output, args=("backend", backend), daemon=True).start()
 
         if not wait_for_http(BACKEND_HEALTH_URL, timeout_s=20):
             raise RuntimeError("Backend did not become ready at /api/status")
@@ -104,11 +119,18 @@ def main():
         print("Motor control service is ready.")
 
         print("Starting UI...")
-        ui = start_process(
-            "ui",
+        ui_env = dict(os.environ)
+        ui_env["BIOREACTOR_BACKEND_URL"] = BACKEND_API_BASE_URL
+        ui = subprocess.Popen(
             [sys.executable, "bioreactorUI.py"],
-            UI_DIR,
+            cwd=str(UI_DIR),
+            env=ui_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
         )
+        threading.Thread(target=stream_output, args=("ui", ui), daemon=True).start()
         print("System is running. Press Ctrl+C to stop everything.")
 
         while True:
