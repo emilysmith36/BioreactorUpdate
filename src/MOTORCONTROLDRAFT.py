@@ -138,6 +138,7 @@ class MotorController:
     def move_steps(self, target_position: float, steps: int, freq_hz: float, direction_val: str) -> None:
         half_period = 1.0 / (2.0 * freq_hz)
         completed_steps = 0
+        delta = self.mm_per_step if direction_val == "up" else -self.mm_per_step
 
         self._set_direction(direction_val)
         self.enable.off()
@@ -151,6 +152,8 @@ class MotorController:
                 self.step.off()
                 sleep(half_period)
                 completed_steps += 1
+                # Keep in-memory position moving so the backend/UI can stay in sync.
+                self.position_mm += delta
         finally:
             self.enable.on()
 
@@ -215,15 +218,19 @@ def move_absolute(data: dict):
     motor = normalize_motor(data)
     ctrl = _controller(motor)
     target = float(data["target"])
+    rate = abs(float(data.get("rate", 1.0)))
     start = ctrl.current_position()
     distance = target - start
     direction_val = "up" if distance >= 0 else "down"
-    steps = int(abs(distance) / MM_PER_STEP)
+    if abs(distance) <= 0:
+        return {"status": "ok", "motor": motor, "target_mm": target}
+    steps = max(1, int(round(abs(distance) / MM_PER_STEP)))
+    freq_hz = ctrl.rate_to_frequency(rate)
 
     ctrl.reserve("move_absolute")
     Thread(
         target=ctrl.move_steps,
-        args=(target, steps, 20.0, direction_val),
+        args=(target, steps, freq_hz, direction_val),
         daemon=True,
     ).start()
 
@@ -235,15 +242,19 @@ def move_relative(data: dict):
     motor = normalize_motor(data)
     ctrl = _controller(motor)
     distance = float(data["distance"])
+    rate = abs(float(data.get("rate", 1.0)))
     start = ctrl.current_position()
     target = start + distance
     direction_val = "up" if distance >= 0 else "down"
-    steps = int(abs(distance) / MM_PER_STEP)
+    if abs(distance) <= 0:
+        return {"status": "ok", "motor": motor, "target_mm": target}
+    steps = max(1, int(round(abs(distance) / MM_PER_STEP)))
+    freq_hz = ctrl.rate_to_frequency(rate)
 
     ctrl.reserve("move_relative")
     Thread(
         target=ctrl.move_steps,
-        args=(target, steps, 20.0, direction_val),
+        args=(target, steps, freq_hz, direction_val),
         daemon=True,
     ).start()
 

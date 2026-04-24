@@ -143,8 +143,9 @@ app.MapPost("/api/motor/move-absolute", async (
 
     try
     {
-        await python.MoveAbsolute(req.Motor, req.Target);
-        _ = motor.MoveAbsolute(req.Target);
+        var rate = req.Rate <= 0 ? 1.0f : req.Rate;
+        await python.MoveAbsolute(req.Motor, req.Target, rate);
+        _ = motor.MoveAbsolute(req.Target, rate);
         return Results.Ok();
     }
     catch (HttpRequestException ex)
@@ -170,8 +171,9 @@ app.MapPost("/api/motor/move-relative", async (
 
     try
     {
-        await python.MoveRelative(req.Motor, req.Distance);
-        _ = motor.MoveRelative(req.Distance);
+        var rate = req.Rate <= 0 ? 1.0f : req.Rate;
+        await python.MoveRelative(req.Motor, req.Distance, rate);
+        _ = motor.MoveRelative(req.Distance, rate);
         return Results.Ok();
     }
     catch (HttpRequestException ex)
@@ -264,12 +266,14 @@ public class MoveAbsoluteRequest
 {
     public string Motor { get; set; } = string.Empty;
     public float Target { get; set; }
+    public float Rate { get; set; } = 1.0f;
 }
 
 public class MoveRelativeRequest
 {
     public string Motor { get; set; } = string.Empty;
     public float Distance { get; set; }
+    public float Rate { get; set; } = 1.0f;
 }
 
 public partial class Program

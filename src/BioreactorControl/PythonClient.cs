@@ -9,14 +9,14 @@ public class PythonMotorClient
         System.Environment.GetEnvironmentVariable("MOTORCONTROL_BASE_URL")
         ?? "http://127.0.0.1:8000/api";
 
-    public Task MoveAbsolute(string motor, float target)
+    public Task MoveAbsolute(string motor, float target, float rate)
     {
-        return PostAndEnsureAsync("/motor/move-absolute", new { motor, target });
+        return PostAndEnsureAsync("/motor/move-absolute", new { motor, target, rate });
     }
 
-    public Task MoveRelative(string motor, float distance)
+    public Task MoveRelative(string motor, float distance, float rate)
     {
-        return PostAndEnsureAsync("/motor/move-relative", new { motor, distance });
+        return PostAndEnsureAsync("/motor/move-relative", new { motor, distance, rate });
     }
 
     public Task JogStart(string motor, float rate, string direction)

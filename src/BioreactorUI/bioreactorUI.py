@@ -299,7 +299,9 @@ class App(tk.Tk):
         self.pos_labels[motor].config(text=f"{motor}: {self.pos[motor]:.3f} ({self.state[motor]})")
         self.step_labels[motor].config(text=self.current_step[motor])
         for widget in self.status_indicators.get(motor, []):
-            widget.config(text=f"{motor}: {self.state[motor]} | {self.current_step[motor][6:]}")
+            widget.config(
+                text=f"{motor}: {self.pos[motor]:.3f} mm ({self.state[motor]}) | {self.current_step[motor][6:]}"
+            )
 
     def sync_emergency_controls(self):
         pause_state = str(self.pause_btn["state"])
@@ -517,7 +519,10 @@ class App(tk.Tk):
         status_frame.pack(fill="x", pady=(0, 8))
 
         for motor in self.motors:
-            label = ttk.Label(status_frame, text=f"{motor}: {self.state[motor]} | {self.current_step[motor][6:]}")
+            label = ttk.Label(
+                status_frame,
+                text=f"{motor}: {self.pos[motor]:.3f} mm ({self.state[motor]}) | {self.current_step[motor][6:]}",
+            )
             label.pack(anchor="w", padx=8, pady=2)
             self.status_indicators[motor].append(label)
 
@@ -625,10 +630,14 @@ class App(tk.Tk):
         except Exception:
             self.add_log("[WARN] invalid relative value")
             return
+        try:
+            rate = float(self.jog_rate.get())
+        except Exception:
+            rate = 1.0
         if value == 0:
             self.add_log(f"[MOVE] {motor} relative zero ignored")
             return
-        self.bridge.move_relative(motor, value)
+        self.bridge.move_relative(motor, value, rate=rate)
 
     def move_absolute(self):
         try:
@@ -636,7 +645,11 @@ class App(tk.Tk):
         except Exception:
             self.add_log("[WARN] invalid absolute value")
             return
-        self.bridge.move_absolute(self.sel_motor.get(), target)
+        try:
+            rate = float(self.jog_rate.get())
+        except Exception:
+            rate = 1.0
+        self.bridge.move_absolute(self.sel_motor.get(), target, rate=rate)
 
     def emergency_stop(self):
         if self.paused:

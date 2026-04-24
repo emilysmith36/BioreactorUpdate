@@ -139,19 +139,25 @@ class HttpBackendBridge:
             print("jog stop exception: ", e)
             return None
 
-    def move_absolute(self, motor, target):
+    def move_absolute(self, motor, target, rate=None):
         print("move_absolute hit")
         try: 
-            resp = self._post("/motor/move-absolute", payload={"motor": motor, "target": target}, timeout=1.0)
+            payload = {"motor": motor, "target": target}
+            if rate is not None:
+                payload["rate"] = float(rate)
+            resp = self._post("/motor/move-absolute", payload=payload, timeout=1.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
             print("move abs exception: ", e)
             return None
 
-    def move_relative(self, motor, distance):
+    def move_relative(self, motor, distance, rate=None):
         print("move relative hit")
         try:
-            resp = self._post("/motor/move-relative", payload={"motor": motor, "distance": distance}, timeout=1.0)
+            payload = {"motor": motor, "distance": distance}
+            if rate is not None:
+                payload["rate"] = float(rate)
+            resp = self._post("/motor/move-relative", payload=payload, timeout=1.0)
             return bool(resp and resp.status_code == 200)
         except Exception as e:
             print("move rel exception: ", e)
