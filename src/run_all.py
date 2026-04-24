@@ -148,7 +148,13 @@ def main():
         backend_env.setdefault("DOTNET_ROLL_FORWARD", "LatestMajor")
 
         backend = subprocess.Popen(
-            ["dotnet", "run", "--project", str(BACKEND_DIR / "BioreactorControl.csproj")],
+            [
+                "dotnet",
+                "run",
+                "--no-launch-profile",
+                "--project",
+                str(BACKEND_DIR / "BioreactorControl.csproj"),
+            ],
             cwd=str(BACKEND_DIR),
             env=backend_env,
             stdout=subprocess.PIPE,
