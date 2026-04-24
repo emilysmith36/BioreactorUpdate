@@ -1,1 +1,50 @@
 .vs/
+
+# VS Code (keep repo settings)
+.vscode/*
+!.vscode/settings.json
+
+# Visual Studio user files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+**/bin/
+**/obj/
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+dist/
+build/
+*.egg-info/
+
+# Local env / settings
+.env
+.env.*
+*.local.json
+
+# Logs / caches
+*.log
+*.cache
+
+# OS/editor junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.tmp

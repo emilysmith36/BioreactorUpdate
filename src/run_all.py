@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT / "BioreactorControl"
 UI_DIR = ROOT / "BioreactorUI"
 
-BACKEND_BASE_URL = "http://127.0.0.1:5000"
+DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:5000"
+BACKEND_BASE_URL = os.environ.get("BIOREACTOR_BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL).rstrip("/")
 BACKEND_HEALTH_URL = f"{BACKEND_BASE_URL}/api/status"
 BACKEND_API_BASE_URL = f"{BACKEND_BASE_URL}/api"
 MOTORCONTROL_HOST = "127.0.0.1"
@@ -89,11 +90,15 @@ def main():
     try:
         print("Starting backend...")
         # Force a known backend URL so the UI/diagnostics behave the same on Windows and the Pi.
+        #
+        # Override defaults with:
+        # - BIOREACTOR_BACKEND_BASE_URL=http://127.0.0.1:5000   (used by this script + UI)
+        # - ASPNETCORE_URLS=http://0.0.0.0:5000                (Kestrel bind address; useful on the Pi)
         backend_env = dict(os.environ)
-        backend_env["ASPNETCORE_URLS"] = BACKEND_BASE_URL
+        backend_env.setdefault("ASPNETCORE_URLS", BACKEND_BASE_URL)
 
         backend = subprocess.Popen(
-            ["dotnet", "run"],
+            ["dotnet", "run", "--project", str(BACKEND_DIR / "BioreactorControl.csproj")],
             cwd=str(BACKEND_DIR),
             env=backend_env,
             stdout=subprocess.PIPE,
@@ -108,6 +113,13 @@ def main():
         print("Backend is ready.")
 
         print("Starting motor control service...")
+        try:
+            import uvicorn  # noqa: F401
+        except Exception as exc:
+            raise RuntimeError(
+                "Python dependency missing: uvicorn. Install deps (e.g. `pip install -r requirements.txt`)."
+            ) from exc
+
         motorcontrol = start_process(
             "motorcontrol",
             [sys.executable, "-m", "uvicorn", "MOTORCONTROLDRAFT:app", "--host", "0.0.0.0", "--port", "8000"],
@@ -120,7 +132,7 @@ def main():
 
         print("Starting UI...")
         ui_env = dict(os.environ)
-        ui_env["BIOREACTOR_BACKEND_URL"] = BACKEND_API_BASE_URL
+        ui_env.setdefault("BIOREACTOR_BACKEND_URL", BACKEND_API_BASE_URL)
         ui = subprocess.Popen(
             [sys.executable, "bioreactorUI.py"],
             cwd=str(UI_DIR),
