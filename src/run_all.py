@@ -5,8 +5,10 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 import os
 from pathlib import Path
+from collections import deque
 
 
 ROOT = Path(__file__).resolve().parent
@@ -14,11 +16,29 @@ BACKEND_DIR = ROOT / "BioreactorControl"
 UI_DIR = ROOT / "BioreactorUI"
 
 DEFAULT_BACKEND_BASE_URL = "http://127.0.0.1:5000"
-BACKEND_BASE_URL = os.environ.get("BIOREACTOR_BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL).rstrip("/")
-BACKEND_HEALTH_URL = f"{BACKEND_BASE_URL}/api/status"
-BACKEND_API_BASE_URL = f"{BACKEND_BASE_URL}/api"
+RAW_BACKEND_BASE_URL = os.environ.get("BIOREACTOR_BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL).rstrip("/")
+
+
+def _normalize_client_base_url(url: str) -> str:
+    # 0.0.0.0 is a bind-all address, not something clients can connect to.
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname == "0.0.0.0":
+        parsed = parsed._replace(netloc=parsed.netloc.replace("0.0.0.0", "127.0.0.1"))
+        return parsed.geturl().rstrip("/")
+    return url.rstrip("/")
+
+
+BACKEND_CLIENT_BASE_URL = _normalize_client_base_url(RAW_BACKEND_BASE_URL)
+BACKEND_HEALTH_URL = f"{BACKEND_CLIENT_BASE_URL}/api/status"
+BACKEND_API_BASE_URL = f"{BACKEND_CLIENT_BASE_URL}/api"
 MOTORCONTROL_HOST = "127.0.0.1"
 MOTORCONTROL_PORT = 8000
+
+LOG_TAILS = {
+    "backend": deque(maxlen=200),
+    "motorcontrol": deque(maxlen=200),
+    "ui": deque(maxlen=200),
+}
 
 
 def stream_output(name, process):
@@ -26,6 +46,10 @@ def stream_output(name, process):
         return
 
     for line in process.stdout:
+        try:
+            LOG_TAILS.setdefault(name, deque(maxlen=200)).append(line.rstrip("\n"))
+        except Exception:
+            pass
         print(f"[{name}] {line}", end="")
 
 
@@ -76,6 +100,14 @@ def wait_for_http_or_exit(url, timeout_s, process, name):
     return False
 
 
+def _format_tail(name: str) -> str:
+    tail = list(LOG_TAILS.get(name, []))
+    if not tail:
+        return f"(no {name} output captured)"
+    joined = "\n".join(tail[-60:])
+    return f"--- last {min(60, len(tail))} lines from {name} ---\n{joined}\n--- end {name} ---"
+
+
 def wait_for_tcp(host, port, timeout_s):
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -111,7 +143,7 @@ def main():
         # - BIOREACTOR_BACKEND_BASE_URL=http://127.0.0.1:5000   (used by this script + UI)
         # - ASPNETCORE_URLS=http://0.0.0.0:5000                (Kestrel bind address; useful on the Pi)
         backend_env = dict(os.environ)
-        backend_env.setdefault("ASPNETCORE_URLS", BACKEND_BASE_URL)
+        backend_env.setdefault("ASPNETCORE_URLS", BACKEND_CLIENT_BASE_URL)
         # Allow running a net8 app on machines that only have a newer runtime installed (e.g. net10).
         backend_env.setdefault("DOTNET_ROLL_FORWARD", "LatestMajor")
 
@@ -126,11 +158,11 @@ def main():
         )
         threading.Thread(target=stream_output, args=("backend", backend), daemon=True).start()
 
-        if not wait_for_http_or_exit(BACKEND_HEALTH_URL, timeout_s=45, process=backend, name="Backend"):
+        if not wait_for_http_or_exit(BACKEND_HEALTH_URL, timeout_s=60, process=backend, name="Backend"):
             raise RuntimeError(
-                "Backend did not become ready at /api/status. "
-                "If you see a .NET framework error above, install the target runtime (net8) "
-                "or keep DOTNET_ROLL_FORWARD=LatestMajor."
+                "Backend did not become ready at /api/status.\n"
+                f"Health URL: {BACKEND_HEALTH_URL}\n\n"
+                f"{_format_tail('backend')}"
             )
         print("Backend is ready.")
 
