@@ -23,4 +23,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export ASPNETCORE_URLS
 export BIOREACTOR_BACKEND_BASE_URL
 
+# Helpful on machines that don't have the exact target runtime installed.
+: "${DOTNET_ROLL_FORWARD:=LatestMajor}"
+export DOTNET_ROLL_FORWARD
+
 exec python3 "${SCRIPT_DIR}/run_all.py"

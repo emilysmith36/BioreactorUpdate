@@ -60,6 +60,22 @@ def wait_for_http(url, timeout_s):
     return False
 
 
+def wait_for_http_or_exit(url, timeout_s, process, name):
+    """Wait for an HTTP endpoint, but fail fast if the process exits."""
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f"{name} exited early (exit code {process.returncode})")
+        try:
+            with urllib.request.urlopen(url, timeout=1.0) as response:
+                if 200 <= response.status < 300:
+                    return True
+        except (urllib.error.URLError, TimeoutError):
+            pass
+        time.sleep(0.25)
+    return False
+
+
 def wait_for_tcp(host, port, timeout_s):
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -96,6 +112,8 @@ def main():
         # - ASPNETCORE_URLS=http://0.0.0.0:5000                (Kestrel bind address; useful on the Pi)
         backend_env = dict(os.environ)
         backend_env.setdefault("ASPNETCORE_URLS", BACKEND_BASE_URL)
+        # Allow running a net8 app on machines that only have a newer runtime installed (e.g. net10).
+        backend_env.setdefault("DOTNET_ROLL_FORWARD", "LatestMajor")
 
         backend = subprocess.Popen(
             ["dotnet", "run", "--project", str(BACKEND_DIR / "BioreactorControl.csproj")],
@@ -108,8 +126,12 @@ def main():
         )
         threading.Thread(target=stream_output, args=("backend", backend), daemon=True).start()
 
-        if not wait_for_http(BACKEND_HEALTH_URL, timeout_s=20):
-            raise RuntimeError("Backend did not become ready at /api/status")
+        if not wait_for_http_or_exit(BACKEND_HEALTH_URL, timeout_s=45, process=backend, name="Backend"):
+            raise RuntimeError(
+                "Backend did not become ready at /api/status. "
+                "If you see a .NET framework error above, install the target runtime (net8) "
+                "or keep DOTNET_ROLL_FORWARD=LatestMajor."
+            )
         print("Backend is ready.")
 
         print("Starting motor control service...")
