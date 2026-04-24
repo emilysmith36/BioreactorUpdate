@@ -174,6 +174,9 @@ class App(tk.Tk):
         self.geometry("1100x700")
         self.minsize(900, 600)
 
+        # Used by the History page; must exist before pages are constructed.
+        self.connection_text = tk.StringVar(value="Backend: connecting…")
+
         self.motors = ["Motor 1", "Motor 2", "Motor 3"]
         self.pos = {m: 0.0 for m in self.motors}
         self.state = {m: "idle" for m in self.motors}
@@ -205,7 +208,6 @@ class App(tk.Tk):
 
         self.show("control")
         self.bridge.connect()
-        self.connection_text = tk.StringVar(value="Backend: connecting…")
         self.after(50, self.process_bridge_events)
         self.after(250, self.refresh_connection_status)
 
