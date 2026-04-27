@@ -1,4 +1,4 @@
-using BioreactorControl.Backend;
+﻿using BioreactorControl.Backend;
 using BioreactorControl.Motors;
 using BioreactorControl.Projects;
 using Microsoft.AspNetCore.Builder;
@@ -12,9 +12,13 @@ builder.Services.AddSingleton<PythonMotorClient>();
 
 var app = builder.Build();
 
+Program.Backend = app.Services.GetRequiredService<BackendManagement>();
+Program.Python = app.Services.GetRequiredService<PythonMotorClient>();
+
 var backendInstance = app.Services.GetRequiredService<BackendManagement>();
 Program.Backend = backendInstance;
 await Program.Backend.Initialize();
+
 
 app.MapGet("/api/status", () => Results.Ok("Backend is running"));
 
@@ -276,7 +280,8 @@ public class MoveRelativeRequest
     public float Rate { get; set; } = 1.0f;
 }
 
-public partial class Program
+public partial class Program 
 {
     public static BackendManagement Backend { get; set; } = null!;
+    public static PythonMotorClient Python { get; set; } = null!;
 }
