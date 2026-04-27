@@ -43,6 +43,8 @@ public class MotorController
     public bool IsBusy => State is MotorState.Moving or MotorState.Jogging or MotorState.Running or MotorState.Paused;
     public bool HasLoadedProject => project is not null;
 
+    private readonly PythonMotorClient _hardware = new();
+
     public MotorController(int id)
     {
         MotorID = id;
@@ -346,10 +348,16 @@ public class MotorController
         CancellationToken token,
         float? forcedDurationSeconds = null)
     {
+        // --- ADD THIS LINE: Tell the hardware to start moving ---
+        // We call this once at the start. The Python side handles the pulse timing.
+        await _hardware.MoveAbsolute(MotorName, targetPosition, rate);
+
         var startPos = motorPosition;
         var distance = targetPosition - startPos;
         var speed = Math.Max(Math.Abs(rate), 0.1f);
         var durationSeconds = forcedDurationSeconds ?? Math.Max(0.15f, Math.Abs(distance) / speed);
+        
+        // The rest of this method updates the UI "progress bar" / position display
         var stepCount = Math.Max(1, (int)Math.Ceiling(durationSeconds / 0.05f));
         var delayMs = Math.Max(10, (int)Math.Round((durationSeconds / stepCount) * 1000.0));
 
