@@ -43,7 +43,7 @@ public class MotorController
     public bool IsBusy => State is MotorState.Moving or MotorState.Jogging or MotorState.Running or MotorState.Paused;
     public bool HasLoadedProject => project is not null;
 
-    private readonly PythonMotorClient _hardware = new();
+    //private readonly PythonMotorClient _hardware = new();
     
 
     public MotorController(int id)
@@ -352,7 +352,7 @@ public class MotorController
         // --- ADD THIS LINE: Tell the hardware to start moving ---
         // We call this once at the start. The Python side handles the pulse timing.
         await Program.Python.MoveAbsolute(MotorName, targetPosition, rate);
-        
+
         var startPos = motorPosition;
         var distance = targetPosition - startPos;
         var speed = Math.Max(Math.Abs(rate), 0.1f);
