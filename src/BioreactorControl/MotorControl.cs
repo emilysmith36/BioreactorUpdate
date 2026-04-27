@@ -375,6 +375,9 @@ public class MotorController
                 await Task.Delay(delayMs, token);
             }
         }
+
+        await Task.Delay(10, token);
+
     }
 
     public async Task HoldPositionAsync(float seconds, CancellationToken token)

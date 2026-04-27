@@ -48,10 +48,33 @@ public class PythonMotorClient
 
     private async Task PostAndEnsureAsync(string path, object? payload)
     {
-        HttpResponseMessage response = payload is null
-            ? await http.PostAsync($"{baseUrl}{path}", null)
-            : await http.PostAsJsonAsync($"{baseUrl}{path}", payload);
+        int maxRetries = 5;
+        int retryDelayMs = 100; // Wait 100ms between attempts
 
-        response.EnsureSuccessStatusCode();
+        for (int i = 0; i < maxRetries; i++)
+        {
+            var response = payload is null
+                ? await http.PostAsync($"{baseUrl}{path}", null)
+                : await http.PostAsJsonAsync($"{baseUrl}{path}", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return; // Success!
+            }
+
+            // If the motor is busy (409), wait and try again
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                if (i < maxRetries - 1) 
+                {
+                    await Task.Delay(retryDelayMs);
+                    continue; 
+                }
+                throw new HttpRequestException($"Motor is persistently busy: {path}");
+            }
+
+            // For other errors (404, 500), fail immediately
+            response.EnsureSuccessStatusCode();
+        }
     }
 }
