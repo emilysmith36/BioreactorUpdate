@@ -50,8 +50,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\BackendManagement.cs",
               "ViewState": "AgIAABwAAAAAAAAAAAAAADEAAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-21T23:01:50.643Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-21T23:01:50.643Z"
             },
             {
               "$type": "Document",
@@ -61,7 +60,7 @@
               "RelativeDocumentMoniker": "src\\BioreactorControl\\PythonClient.cs",
               "ToolTip": "C:\\Users\\otter\\BioreactorUpdate\\src\\BioreactorControl\\PythonClient.cs",
               "RelativeToolTip": "src\\BioreactorControl\\PythonClient.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAgwCcAAABAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-21T18:15:17.042Z",
               "EditorCaption": ""
@@ -88,8 +87,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\MotorControl.cs",
               "ViewState": "AgIAACMAAAAAAAAAAAAhwDIAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T06:02:07.914Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T06:02:07.914Z"
             },
             {
               "$type": "Document",
@@ -101,8 +99,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\ProjectData.cs",
               "ViewState": "AgIAAKsAAAAAAAAAAAAQwLkAAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T06:01:57.452Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T06:01:57.452Z"
             },
             {
               "$type": "Document",
@@ -114,8 +111,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\Program.cs",
               "ViewState": "AgIAAFgAAAAAAAAAAAAswHYAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T04:27:34.47Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T04:27:34.47Z"
             },
             {
               "$type": "Document",
@@ -127,8 +123,7 @@
               "RelativeToolTip": "src\\BioreactorControl\\BackendDemo.cs",
               "ViewState": "AgIAAAUAAAAAAAAAAAAswCIAAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-17T04:18:56.219Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-17T04:18:56.219Z"
             }
           ]
         }
