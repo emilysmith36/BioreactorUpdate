@@ -161,28 +161,72 @@ public class CycleBasedAction : ProjectAction
 
     public override async Task PerformAction(MotorController motor, CancellationToken token)
     {
+        // Capture initial state for testing telemetry
+        var startTime = DateTime.UtcNow;
+        var startPosition = motor.motorPosition;
+        float minPos = startPosition;
+        float maxPos = startPosition;
+
         var baseline = motor.motorPosition;
         var target = TargetPositionMm != 0
             ? baseline + TargetPositionMm
             : baseline + (Direction.Equals("compression", StringComparison.OrdinalIgnoreCase) ? -Math.Abs(Displacement) : Math.Abs(Displacement));
 
-        var seconds = ResolveTotalDurationSeconds();
-        var cycleCount = ResolveCycleCount(seconds);
+        var predictedTime = ResolveTotalDurationSeconds();
+        var cycleCount = ResolveCycleCount(predictedTime);
 
-        if (cycleCount <= 1)
+        // Local helper to track movement range during execution
+        void TrackRange()
         {
-            await motor.RunInterpolatedMoveAsync(target, Rate, token, seconds > 0 ? seconds : null);
-            return;
+            minPos = Math.Min(minPos, motor.motorPosition);
+            maxPos = Math.Max(maxPos, motor.motorPosition);
         }
 
-        var secondsPerCycle = Math.Max(0.2f, seconds / cycleCount);
-        var halfCycleSeconds = secondsPerCycle / 2f;
-
-        for (int cycleIndex = 0; cycleIndex < cycleCount; cycleIndex++)
+        try
         {
-            token.ThrowIfCancellationRequested();
-            await motor.RunInterpolatedMoveAsync(target, Rate, token, halfCycleSeconds);
-            await motor.RunInterpolatedMoveAsync(baseline, Rate, token, halfCycleSeconds);
+            if (cycleCount <= 1)
+            {
+                await motor.RunInterpolatedMoveAsync(target, Rate, token, predictedTime > 0 ? predictedTime : null);
+                TrackRange();
+            }
+            else
+            {
+                var secondsPerCycle = Math.Max(0.2f, predictedTime / cycleCount);
+                var halfCycleSeconds = secondsPerCycle / 2f;
+
+                for (int cycleIndex = 0; cycleIndex < cycleCount; cycleIndex++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    
+                    // Extension stroke
+                    await motor.RunInterpolatedMoveAsync(target, Rate, token, halfCycleSeconds);
+                    TrackRange();
+                    
+                    // Return stroke
+                    await motor.RunInterpolatedMoveAsync(baseline, Rate, token, halfCycleSeconds);
+                    TrackRange();
+                }
+            }
+        }
+        finally
+        {
+            // Calculate Final Metrics
+            var actualDuration = (float)(DateTime.UtcNow - startTime).TotalSeconds;
+            var actualRange = maxPos - minPos;
+            var actualCPS = cycleCount / Math.Max(0.1f, actualDuration);
+
+            // Format Diagnostic Output
+            string diagnosticLog = 
+                $"\n[TEST DATA] {Label ?? "Action"} Results:\n" +
+                $"  • Time: {actualDuration:F2}s vs Predicted {predictedTime:F2}s\n" +
+                $"  • Cycles: {cycleCount} vs Predicted {Cycles}\n" +
+                $"  • CPS: {actualCPS:F2} vs Predicted {Frequency:F2}\n" +
+                $"  • Rest Position: Final {motor.motorPosition:F3}mm (Start: {startPosition:F3}mm)\n" +
+                $"  • Movement Range: {actualRange:F3}mm vs Predicted {Displacement:F3}mm";
+
+            // Print to Console and History Log (via Backend Event System)
+            Console.WriteLine(diagnosticLog);
+            Program.Backend.PushLog(motor.MotorName, diagnosticLog);
         }
     }
 
