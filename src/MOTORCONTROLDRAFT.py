@@ -70,9 +70,9 @@ def _load_pins() -> dict[str, MotorPins]:
             enable=_env_int("MOTOR2_ENA_PIN", 13),
         ),
         "Motor 3": MotorPins(
-            step=_env_int("MOTOR3_STEP_PIN", 19),
-            direction=_env_int("MOTOR3_DIR_PIN", 26),
-            enable=_env_int("MOTOR3_ENA_PIN", 21),
+            step=_env_int("MOTOR3_STEP_PIN", 23),
+            direction=_env_int("MOTOR3_DIR_PIN", 24),
+            enable=_env_int("MOTOR3_ENA_PIN", 25),
         ),
     }
 
