@@ -178,6 +178,8 @@ class App(tk.Tk):
         self.connection_text = tk.StringVar(value="Backend: connecting…")
 
         self.motors = ["Motor 1", "Motor 2", "Motor 3"]
+        self.raw_pos = {m: 0.0 for m in self.motors}
+        self.position_offsets = {m: 0.0 for m in self.motors}
         self.pos = {m: 0.0 for m in self.motors}
         self.state = {m: "idle" for m in self.motors}
         self.current_step = {m: "Step: idle" for m in self.motors}
@@ -252,8 +254,10 @@ class App(tk.Tk):
             self.add_log(f"[STATUS] {event['motor']} is now {event['state']}")
             
         elif event_type == "motor_position":
-            self.pos[event["motor"]] = event["position"]
-            self.update_motor_label(event["motor"])
+            motor = event["motor"]
+            self.raw_pos[motor] = event["position"]
+            self.pos[motor] = self.display_position_for(motor)
+            self.update_motor_label(motor)
             
         elif event_type == "motor_step":
             self.set_motor_step(event["motor"], event["step"])
@@ -385,6 +389,32 @@ class App(tk.Tk):
             return False
         return True
 
+    def display_position_for(self, motor):
+        return self.raw_pos[motor] + self.position_offsets[motor]
+
+    def set_displayed_position(self):
+        motor = self.sel_motor.get()
+        if self.bridge.has_active_run(motor) or self.state[motor] == "jogging":
+            self.add_log(f"[WARN] Cannot edit {motor} displayed height while it is moving")
+            return
+
+        try:
+            desired_position = float(self.display_pos_edit.get())
+        except Exception:
+            self.add_log("[WARN] invalid displayed height value")
+            return
+
+        self.position_offsets[motor] = desired_position - self.raw_pos[motor]
+        self.pos[motor] = desired_position
+        self.abs.set(desired_position)
+        self.update_motor_label(motor)
+        self.add_log(f"[POSITION EDIT] {motor} displayed height set to {desired_position:.3f} mm")
+
+    def sync_selected_motor_fields(self, *_args):
+        motor = self.sel_motor.get()
+        self.display_pos_edit.set(self.pos[motor])
+        self.abs.set(self.pos[motor])
+
     def action_displacement_mm(self, step):
         if step["motion_mode"] == "strain":
             return step["gauge_length"] * (step["strain_pct"] / 100.0)
@@ -446,6 +476,7 @@ class App(tk.Tk):
         ttk.Label(left, text="Select Motor").pack(anchor="w")
         self.sel_motor = tk.StringVar(value=self.motors[0])
         ttk.Combobox(left, textvariable=self.sel_motor, values=self.motors, state="readonly", width=18).pack(fill="x", pady=6)
+        self.sel_motor.trace_add("write", self.sync_selected_motor_fields)
 
         ttk.Label(left, text="Jog rate (mm/sec)").pack(anchor="w")
         self.jog_rate = tk.DoubleVar(value=1.0)
@@ -473,6 +504,13 @@ class App(tk.Tk):
         self.abs = tk.DoubleVar(value=0.0)
         ttk.Spinbox(left, from_=-1000000000000, to=1000000000000, increment=0.1, textvariable=self.abs, width=14).pack(pady=4)
         ttk.Button(left, text="Move Absolute", command=self.move_absolute).pack(fill="x", pady=4)
+
+        ttk.Separator(left, orient="horizontal").pack(fill="x", pady=8)
+
+        ttk.Label(left, text="Displayed current height (mm)").pack(anchor="w")
+        self.display_pos_edit = tk.DoubleVar(value=0.0)
+        ttk.Entry(left, textvariable=self.display_pos_edit).pack(fill="x", pady=4)
+        ttk.Button(left, text="Edit Displayed Height", command=self.set_displayed_position).pack(fill="x", pady=4)
 
         ttk.Separator(left, orient="horizontal").pack(fill="x", pady=8)
 
@@ -511,6 +549,8 @@ class App(tk.Tk):
         ttk.Label(right, text="Log", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(8, 0))
         self.control_log = scrolledtext.ScrolledText(right, height=18, state="disabled", wrap="word")
         self.control_log.pack(fill="both", expand=True, pady=(4, 0))
+
+        self.sync_selected_motor_fields()
 
         return frame
 
@@ -640,8 +680,11 @@ class App(tk.Tk):
         self.bridge.move_relative(motor, value, rate=rate)
 
     def move_absolute(self):
+        motor = self.sel_motor.get()
+        if not self.can_manual_control(motor):
+            return
         try:
-            target = float(self.abs.get())
+            displayed_target = float(self.abs.get())
         except Exception:
             self.add_log("[WARN] invalid absolute value")
             return
@@ -649,7 +692,8 @@ class App(tk.Tk):
             rate = float(self.jog_rate.get())
         except Exception:
             rate = 1.0
-        self.bridge.move_absolute(self.sel_motor.get(), target, rate=rate)
+        raw_target = displayed_target - self.position_offsets[motor]
+        self.bridge.move_absolute(motor, raw_target, rate=rate)
 
     def emergency_stop(self):
         if self.paused:
