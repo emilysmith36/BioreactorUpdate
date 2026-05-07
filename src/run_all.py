@@ -182,7 +182,7 @@ def main():
 
         motorcontrol = start_process(
             "motorcontrol",
-            [sys.executable, "-m", "uvicorn", "MOTORCONTROLDRAFT:app", "--host", "0.0.0.0", "--port", "8000"],
+            [sys.executable, "-m", "uvicorn", "MotorCommands:app", "--host", "0.0.0.0", "--port", "8000"],
             ROOT,
         )
 
