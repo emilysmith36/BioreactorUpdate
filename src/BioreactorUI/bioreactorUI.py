@@ -7,6 +7,22 @@ import time
 from backend_bridge import UiMockBackend
 from backend_bridge import HttpBackendBridge
 
+# ---------------------------------------------------------------------------
+# FIX: Stepper ramp time correction (seconds).
+# This must match the constant in MotorControl.cs (RampTimeSeconds).
+# Each move spends this long accelerating and this long decelerating, so the
+# total overhead per move is 2 * RAMP_TIME_SECONDS.
+#
+# Derivation from validation data:
+#   At 3% strain, L0=22.225 mm → displacement = 0.667 mm
+#   At 1 Hz that is a 0.5-second theoretical half-cycle.
+#   Observed time was ~49.4 s for 30 cycles → 1.647 s/cycle → 0.823 s/half-cycle.
+#   Overhead = 0.823 - 0.5 = 0.323 s ≈ 2 * 0.16 s ramp per move.
+# Tune this value if your driver's acceleration config changes.
+# ---------------------------------------------------------------------------
+RAMP_TIME_SECONDS = 0.125
+
+
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
         master.columnconfigure(1, weight=1)
@@ -394,8 +410,16 @@ class App(tk.Tk):
 
     def set_displayed_position(self):
         motor = self.sel_motor.get()
-        if self.bridge.has_active_run(motor) or self.state[motor] == "jogging":
-            self.add_log(f"[WARN] Cannot edit {motor} displayed height while it is moving")
+
+        # FIX: Prevent editing the displayed position while the motor is running a
+        # program. Allowing this mid-run silently shifts the reference frame for all
+        # subsequent displacement calculations, compounding position error per cycle.
+        if self.bridge.has_active_run(motor):
+            self.add_log(f"[WARN] Cannot edit {motor} displayed height while a program is running")
+            return
+
+        if self.state[motor] == "jogging":
+            self.add_log(f"[WARN] Cannot edit {motor} displayed height while it is jogging")
             return
 
         try:
@@ -421,8 +445,27 @@ class App(tk.Tk):
         return step["displacement"]
 
     def action_duration_seconds(self, step):
+        """
+        FIX: Account for stepper acceleration/deceleration ramp time.
+
+        The original implementation computed duration as pure distance / speed,
+        which underestimated real move time at higher strains. Validation data
+        showed the error scaled with displacement — exactly what ramp time does.
+
+        Each move spends RAMP_TIME_SECONDS accelerating from rest to target speed
+        and another RAMP_TIME_SECONDS decelerating back to rest. The 2x factor is
+        applied once per move (each cycle has two moves: extend + return).
+        """
         if step["timing_mode"] == "cycles":
-            return step["cycles"] / step["freq"]
+            # For cycle-based steps, the backend determines timing from the cycle
+            # count and frequency. We still add ramp overhead so estimated run time
+            # shown in the UI matches reality.
+            # Each cycle = 2 half-moves (extend + return), each with 2x ramp overhead.
+            base_cycle_time = 1.0 / step["freq"]
+            ramp_overhead_per_cycle = 4 * RAMP_TIME_SECONDS  # 2 moves × 2 ramps
+            adjusted_cycle_time = base_cycle_time + ramp_overhead_per_cycle
+            return step["cycles"] * adjusted_cycle_time
+
         unit_scale = 3600.0 if step["unit"] == "Hours" else 60.0
         return step["duration"] * unit_scale
 
