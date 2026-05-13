@@ -192,8 +192,7 @@ public class MotorController
 
     public Task MoveRelative(float distance, float rate = 1.0f)
     {
-        var currentPosition = motorPosition;
-        return MoveAbsolute(currentPosition + distance, rate);
+        return MoveRelativeInternalAsync(distance, rate);
     }
 
     public Task JogStart(float rate, int direction)
@@ -226,7 +225,6 @@ public class MotorController
         _ = Task.Run(async () =>
         {
             var token = operationCts.Token;
-            var lastTick = DateTime.UtcNow;
 
             try
             {
@@ -234,17 +232,7 @@ public class MotorController
                 {
                     await WaitWhilePausedAsync(token);
                     token.ThrowIfCancellationRequested();
-
-                    var now = DateTime.UtcNow;
-                    var deltaSeconds = (float)(now - lastTick).TotalSeconds;
-                    lastTick = now;
-
-                    if (deltaSeconds <= 0)
-                    {
-                        deltaSeconds = 0.05f;
-                    }
-
-                    UpdatePosition(motorPosition + (Math.Abs(rate) * normalizedDirection * deltaSeconds));
+                    await SyncPositionFromHardwareAsync();
                     await Task.Delay(50, token);
                 }
             }
@@ -349,35 +337,38 @@ public class MotorController
         CancellationToken token,
         float? forcedDurationSeconds = null)
     {
-        // --- ADD THIS LINE: Tell the hardware to start moving ---
-        // We call this once at the start. The Python side handles the pulse timing.
         await Program.Python.MoveAbsolute(MotorName, targetPosition, rate);
+        var missingPolls = 0;
 
-        var startPos = motorPosition;
-        var distance = targetPosition - startPos;
-        var speed = Math.Max(Math.Abs(rate), 0.1f);
-        var durationSeconds = forcedDurationSeconds ?? Math.Max(0.15f, Math.Abs(distance) / speed);
-        
-        // The rest of this method updates the UI "progress bar" / position display
-        var stepCount = Math.Max(1, (int)Math.Ceiling(durationSeconds / 0.05f));
-        var delayMs = Math.Max(10, (int)Math.Round((durationSeconds / stepCount) * 1000.0));
-
-        for (int i = 1; i <= stepCount; i++)
+        while (true)
         {
             await WaitWhilePausedAsync(token);
             token.ThrowIfCancellationRequested();
 
-            var nextPosition = startPos + (distance * (i / (float)stepCount));
-            UpdatePosition(nextPosition);
-
-            if (i < stepCount)
+            var status = await TryGetHardwareStatusAsync();
+            if (status is null)
             {
-                await Task.Delay(delayMs, token);
+                missingPolls++;
+                if (missingPolls >= 20)
+                {
+                    UpdatePosition(targetPosition);
+                    break;
+                }
+
+                await Task.Delay(50, token);
+                continue;
             }
+
+            missingPolls = 0;
+            UpdatePosition(status.position);
+
+            if (!status.is_busy || status.active_mode == "idle")
+            {
+                break;
+            }
+
+            await Task.Delay(50, token);
         }
-
-        await Task.Delay(10, token);
-
     }
 
     public async Task HoldPositionAsync(float seconds, CancellationToken token)
@@ -422,6 +413,34 @@ public class MotorController
     {
         motorPosition = position;
         PushPosition();
+    }
+
+    private async Task MoveRelativeInternalAsync(float distance, float rate)
+    {
+        await SyncPositionFromHardwareAsync();
+        var currentPosition = motorPosition;
+        await MoveAbsolute(currentPosition + distance, rate);
+    }
+
+    private async Task SyncPositionFromHardwareAsync()
+    {
+        var status = await TryGetHardwareStatusAsync();
+        if (status is not null)
+        {
+            UpdatePosition(status.position);
+        }
+    }
+
+    private async Task<PythonMotorStatus?> TryGetHardwareStatusAsync()
+    {
+        try
+        {
+            return await Program.Python.GetMotorStatus(MotorName);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
     }
 
     private void PushPosition()

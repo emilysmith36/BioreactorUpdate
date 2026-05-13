@@ -2,6 +2,14 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
+public sealed class PythonMotorStatus
+{
+    public string motor { get; set; } = string.Empty;
+    public float position { get; set; }
+    public string active_mode { get; set; } = "idle";
+    public bool is_busy { get; set; }
+}
+
 public class PythonMotorClient
 {
     private readonly HttpClient http = new();
@@ -44,6 +52,16 @@ public class PythonMotorClient
     public Task StopAll()
     {
         return PostAndEnsureAsync("/system/abort", null);
+    }
+
+    public Task<PythonMotorStatus[]?> GetAllStatuses()
+    {
+        return http.GetFromJsonAsync<PythonMotorStatus[]>($"{baseUrl}/status/all");
+    }
+
+    public Task<PythonMotorStatus?> GetMotorStatus(string motor)
+    {
+        return http.GetFromJsonAsync<PythonMotorStatus>($"{baseUrl}/status/{Uri.EscapeDataString(motor)}");
     }
 
     private async Task PostAndEnsureAsync(string path, object? payload)
