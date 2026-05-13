@@ -35,21 +35,6 @@ public class MotorController
     private JogResumeCommand? pausedJogCommand;
     private string currentStep = "Step: idle";
 
-    // FIX 1: Tunable acceleration ramp time (seconds).
-    // This is the time the stepper spends accelerating from rest to target speed
-    // (and decelerating back to rest). Validation data showed ~0.25s overhead per
-    // move at moderate strains. Tune this to match your driver's actual ramp config.
-    // Total ramp overhead per move = 2 * RampTimeSeconds (accel + decel).
-    private const float RampTimeSeconds = 0.125f;
-
-    // FIX 2: How long to poll after a hardware move completes before declaring
-    // the position settled. This lets the Python side's final encoder read arrive.
-    private const int SettleDelayMs = 50;
-
-    // FIX 3: Minimum position change (mm) to consider an encoder update "real"
-    // vs. noise. Derived from step size: 0.003048 mm/microstep.
-    private const float PositionEpsilon = 0.002f;
-
     public int MotorID { get; }
     public string MotorName => $"Motor {MotorID + 1}";
     public float motorPosition { get; private set; }
@@ -59,6 +44,7 @@ public class MotorController
     public bool HasLoadedProject => project is not null;
 
     //private readonly PythonMotorClient _hardware = new();
+    
 
     public MotorController(int id)
     {
@@ -174,7 +160,7 @@ public class MotorController
 
         try
         {
-            await RunHardwareMoveAsync(targetPosition, rate, operationCts.Token);
+            await RunInterpolatedMoveAsync(targetPosition, rate, operationCts.Token);
             PushLog($"[MOVE END] {MotorName} pos={motorPosition:0.###}");
         }
         catch (OperationCanceledException)
@@ -258,11 +244,6 @@ public class MotorController
                         deltaSeconds = 0.05f;
                     }
 
-                    // FIX: Jog still uses dead-reckoning because the hardware is
-                    // continuously moving and there is no discrete target to poll against.
-                    // This is acceptable — jog is a manual positioning aid, not a
-                    // precision motion. The position is snapped from real encoder data
-                    // the next time a non-jog move or program step runs.
                     UpdatePosition(motorPosition + (Math.Abs(rate) * normalizedDirection * deltaSeconds));
                     await Task.Delay(50, token);
                 }
@@ -362,89 +343,41 @@ public class MotorController
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // FIX: RunHardwareMoveAsync replaces RunInterpolatedMoveAsync.
-    //
-    // OLD approach: issue hardware command once, then fake the position by
-    // linearly interpolating over an estimated duration. This caused the UI to
-    // show the "right" position before the motor got there (or after), and the
-    // error compounded over cycles because ramp time was not accounted for.
-    //
-    // NEW approach:
-    //   1. Calculate a realistic expected duration including ramp time.
-    //   2. Issue the hardware command.
-    //   3. Poll the real encoder position from Python at 50 ms intervals.
-    //   4. Only update the UI when the encoder reports a meaningfully different
-    //      position (> PositionEpsilon), so noise doesn't cause false updates.
-    //   5. After the expected duration, allow a settle window for the final
-    //      encoder read to arrive before snapping to the exact target.
-    // ---------------------------------------------------------------------------
-    public async Task RunHardwareMoveAsync(
+    public async Task RunInterpolatedMoveAsync(
         float targetPosition,
         float rate,
         CancellationToken token,
         float? forcedDurationSeconds = null)
     {
-        var startPos = motorPosition;
-        var distance = Math.Abs(targetPosition - startPos);
-        var speed = Math.Max(Math.Abs(rate), 0.1f);
-
-        // FIX: Add 2× ramp time (accel + decel) to the raw distance/speed estimate.
-        // This is the core correction for the time-accuracy errors seen in validation.
-        var estimatedDurationSeconds = forcedDurationSeconds
-            ?? Math.Max(0.15f, (distance / speed) + (2 * RampTimeSeconds));
-
-        // Issue the hardware command once. Python handles all pulse timing.
+        // --- ADD THIS LINE: Tell the hardware to start moving ---
+        // We call this once at the start. The Python side handles the pulse timing.
         await Program.Python.MoveAbsolute(MotorName, targetPosition, rate);
 
-        // Poll real encoder position until the estimated duration has elapsed.
-        var deadline = DateTime.UtcNow.AddSeconds(estimatedDurationSeconds);
+        var startPos = motorPosition;
+        var distance = targetPosition - startPos;
+        var speed = Math.Max(Math.Abs(rate), 0.1f);
+        var durationSeconds = forcedDurationSeconds ?? Math.Max(0.15f, Math.Abs(distance) / speed);
+        
+        // The rest of this method updates the UI "progress bar" / position display
+        var stepCount = Math.Max(1, (int)Math.Ceiling(durationSeconds / 0.05f));
+        var delayMs = Math.Max(10, (int)Math.Round((durationSeconds / stepCount) * 1000.0));
 
-        while (DateTime.UtcNow < deadline)
+        for (int i = 1; i <= stepCount; i++)
         {
             await WaitWhilePausedAsync(token);
             token.ThrowIfCancellationRequested();
 
-            // Read actual encoder position from Python hardware layer.
-            float encoderPosition = await Program.Python.GetPosition(MotorName);
+            var nextPosition = startPos + (distance * (i / (float)stepCount));
+            UpdatePosition(nextPosition);
 
-            // Only push an update if the encoder moved enough to be meaningful.
-            if (Math.Abs(encoderPosition - motorPosition) > PositionEpsilon)
+            if (i < stepCount)
             {
-                UpdatePosition(encoderPosition);
+                await Task.Delay(delayMs, token);
             }
-
-            await Task.Delay(50, token);
         }
 
-        // Settle window: let the final encoder read arrive after motion stops.
-        await Task.Delay(SettleDelayMs, token);
+        await Task.Delay(10, token);
 
-        // Final authoritative read — snap UI to exact encoder position.
-        float finalPosition = await Program.Python.GetPosition(MotorName);
-        UpdatePosition(finalPosition);
-
-        // Log if we ended up meaningfully far from the target — useful for
-        // diagnosing missed steps or mechanical backlash.
-        var finalError = Math.Abs(finalPosition - targetPosition);
-        if (finalError > PositionEpsilon * 10)
-        {
-            PushLog($"[POSITION WARN] {MotorName} target={targetPosition:0.###} actual={finalPosition:0.###} err={finalError:0.###} mm");
-        }
-    }
-
-    // ---------------------------------------------------------------------------
-    // Kept for any callers that may reference it (e.g. action types that pass a
-    // forcedDurationSeconds for timed holds). Internally delegates to the fixed
-    // hardware-polling version.
-    // ---------------------------------------------------------------------------
-    public Task RunInterpolatedMoveAsync(
-        float targetPosition,
-        float rate,
-        CancellationToken token,
-        float? forcedDurationSeconds = null)
-    {
-        return RunHardwareMoveAsync(targetPosition, rate, token, forcedDurationSeconds);
     }
 
     public async Task HoldPositionAsync(float seconds, CancellationToken token)
