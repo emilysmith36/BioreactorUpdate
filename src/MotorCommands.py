@@ -7,6 +7,7 @@ from time import sleep
 
 from fastapi import FastAPI, HTTPException
 
+#add to this file the error stmt. need to have a set max/min pos from abs 0, give error message if value is entered DO NOT ALLOW MOTOR TO MOVE
 
 app = FastAPI()
 

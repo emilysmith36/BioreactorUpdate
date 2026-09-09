@@ -130,11 +130,17 @@ class ActionDialog(simpledialog.Dialog):
                 cycles = int(self.cycles.get())
                 if cycles <= 0:
                     raise ValueError
+            if self.freq < (self.displacement / self.rate):
+                raise ValueError
+            if self.rate > 3: #IF YOUR MOTOR HAS A DIFFERENT MAX, CHANGE 3 TO YOUR NUMBER TO AVOID ERROR MESSAGE
+                raise ValueError
         except Exception:
             messagebox.showerror(
                 "Invalid Action Step",
                 "Enter positive values for rate, frequency, timing, and gauge length. "
-                "Use non-negative values for strain and displacement.",
+                "Use non-negative values for strain and displacement."
+                "Ensure displacement divided by rate is less than the frequency."
+                "Rate cannot exceed 3 for any motor",
                 parent=self,
             )
             return False
