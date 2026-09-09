@@ -140,6 +140,7 @@ class MotorController:
         half_period = 1.0 / (2.0 * freq_hz)
         completed_steps = 0
         delta = self.mm_per_step if direction_val == "up" else -self.mm_per_step
+        start_position = self.current_position()
 
         self._set_direction(direction_val)
         self.enable.off()
@@ -158,14 +159,10 @@ class MotorController:
         finally:
             self.enable.on()
 
-            estimated_distance = completed_steps * self.mm_per_step
-            if direction_val == "down":
-                estimated_distance *= -1
-
             if completed_steps == steps:
                 self.set_position(target_position)
             else:
-                self.set_position(self.current_position() + estimated_distance)
+                self.set_position(start_position + (completed_steps * delta))
 
             self.stop_event.clear()
             self.release()
@@ -212,6 +209,32 @@ def rate_to_frequency(rate_mm_per_second):
 
 def _controller(motor: str) -> MotorController:
     return MOTORS[motor]
+
+
+def _status_payload(motor: str, ctrl: MotorController) -> dict:
+    return {
+        "motor": motor,
+        "position": ctrl.current_position(),
+        "active_mode": ctrl.active_mode,
+        "is_busy": ctrl.active_mode != "idle",
+    }
+
+
+@app.get("/api/status")
+def status():
+    return {"status": "ok"}
+
+
+@app.get("/api/status/all")
+def status_all():
+    return [_status_payload(motor, ctrl) for motor, ctrl in MOTORS.items()]
+
+
+@app.get("/api/status/{motor}")
+def status_motor(motor: str):
+    if motor not in MOTORS:
+        raise HTTPException(status_code=404, detail=f"Unknown motor: {motor}")
+    return _status_payload(motor, _controller(motor))
 
 
 @app.post("/api/motor/move-absolute")

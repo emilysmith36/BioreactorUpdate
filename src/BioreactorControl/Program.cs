@@ -130,10 +130,9 @@ app.MapPost("/api/jog/stop", async (
     }
 });
 
-app.MapPost("/api/motor/move-absolute", async (
+app.MapPost("/api/motor/move-absolute", (
     MoveAbsoluteRequest req,
-    BackendManagement backend,
-    PythonMotorClient python) =>
+    BackendManagement backend) =>
 {
     if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
     {
@@ -145,23 +144,14 @@ app.MapPost("/api/motor/move-absolute", async (
         return Results.Conflict($"{motor.MotorName} is already busy");
     }
 
-    try
-    {
-        var rate = req.Rate <= 0 ? 1.0f : req.Rate;
-        await python.MoveAbsolute(req.Motor, req.Target, rate);
-        _ = motor.MoveAbsolute(req.Target, rate);
-        return Results.Ok();
-    }
-    catch (HttpRequestException ex)
-    {
-        return Results.Problem($"Move absolute failed: {ex.Message}");
-    }
+    var rate = req.Rate <= 0 ? 1.0f : req.Rate;
+    _ = motor.MoveAbsolute(req.Target, rate);
+    return Results.Ok();
 });
 
-app.MapPost("/api/motor/move-relative", async (
+app.MapPost("/api/motor/move-relative", (
     MoveRelativeRequest req,
-    BackendManagement backend,
-    PythonMotorClient python) =>
+    BackendManagement backend) =>
 {
     if (!backend.TryGetMotor(req.Motor, out var motor) || motor is null)
     {
@@ -173,17 +163,9 @@ app.MapPost("/api/motor/move-relative", async (
         return Results.Conflict($"{motor.MotorName} is already busy");
     }
 
-    try
-    {
-        var rate = req.Rate <= 0 ? 1.0f : req.Rate;
-        await python.MoveRelative(req.Motor, req.Distance, rate);
-        _ = motor.MoveRelative(req.Distance, rate);
-        return Results.Ok();
-    }
-    catch (HttpRequestException ex)
-    {
-        return Results.Problem($"Move relative failed: {ex.Message}");
-    }
+    var rate = req.Rate <= 0 ? 1.0f : req.Rate;
+    _ = motor.MoveRelative(req.Distance, rate);
+    return Results.Ok();
 });
 
 app.MapPost("/api/system/pause", async (
